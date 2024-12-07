@@ -21,19 +21,23 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 	}, {});
 	//
 	const form = $state({
+		initialValue,
 		data: initialValue,
 		errors: <{ [K in keyof T]: string[] }>initialErrors,
 		isValid: true,
 		isSubmitting: false,
 		isDirty: false,
+		setInitialValue: (value: T) => {
+			form.initialValue = value;
+		},
 		setField: <K extends keyof T>(field: K, value: T[K]) => {
 			form.data[field] = value;
 		},
 		reset: () => {
-			form.data = initialValue;
+			form.data = form.initialValue;
 		},
 		resetField: (field: keyof T) => {
-			form.data[field] = initialValue[field];
+			form.data[field] = form.initialValue[field];
 		},
 		arrayField: <K extends ArrayKeys<T>>(field: K) => {
 			type V = T[K] extends (infer U)[] ? U : never;
@@ -99,9 +103,9 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 	});
 
 	$effect(() => {
-		const equal = Object.keys(initialValue!).every(
+		const equal = Object.keys(form.initialValue!).every(
 			// @ts-ignore
-			(key) => JSON.stringify(form.data[key]) === JSON.stringify(initialValue[key])
+			(key) => JSON.stringify(form.data[key]) === JSON.stringify(form.initialValue[key])
 		);
 		form.isDirty = !equal;
 		if (onChange) onChange(form as any);
