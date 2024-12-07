@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { z } from 'zod';
 
 type FormProps<T> = {
 	initialValue: T;
 	onSubmit?: (data: T) => Promise<void>;
-	onChange?: (form: any) => void;
+	onChange?: (form: ReturnType<typeof useForm<T>>) => void;
 	schema?: z.ZodObject<any>;
 };
 
@@ -19,12 +21,6 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 	}, {});
 	//
 	const form = $state({
-		enhance: (node: HTMLFormElement) => {
-			node.addEventListener('submit', (event) => {
-				event.preventDefault();
-				form.submit();
-			});
-		},
 		data: initialValue,
 		errors: <{ [K in keyof T]: string[] }>initialErrors,
 		isValid: true,
@@ -103,13 +99,22 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 	});
 
 	$effect(() => {
-		// @ts-ignore
-		const equal = Object.keys(initialValue).every((key) => form.data[key] === initialValue[key]);
+		const equal = Object.keys(initialValue!).every(
+			// @ts-ignore
+			(key) => JSON.stringify(form.data[key]) === JSON.stringify(initialValue[key])
+		);
 		form.isDirty = !equal;
-		if (onChange) onChange(form);
+		if (onChange) onChange(form as any);
 		//
 		if (schema) form.validate();
 	});
 
-	return form;
+	const enhance = (node: HTMLFormElement) => {
+		node.addEventListener('submit', (event) => {
+			event.preventDefault();
+			form.submit();
+		});
+	};
+
+	return { form, enhance };
 }
