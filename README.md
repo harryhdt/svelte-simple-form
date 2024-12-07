@@ -31,22 +31,29 @@ npm install svelte-simple-form zod
 		example: z.string().min(1, 'Name is required')
 	});
 
-	const form = useForm({
-		initialValue: { name: '', age: 0 },
+	const { form, enhance } = useForm({
+		initialValue: { name: '', age: 0, example: '' },
+		schema,
 		onSubmit: async (data) => {
 			console.log(data);
-		},
-		schema
+		}
 	});
 </script>
 
-<form use:form.enhance>
+<form use:enhance>
 	<input type="text" bind:value={form.data.name} />
 	<input type="number" bind:value={form.data.age} />
-	<input type="text" oninput={(e) => setField('example', e.target.value)} />
+	<input type="text" oninput={(e) => form.setField('example', e.target.value)} />
+	<p>Error name: {form.errors.name}</p>
+	<button type="button" onclick={() => form.reset()}>Reset</button>
 	<button>Submit</button>
 </form>
 ```
+
+## API Overview
+
+- **`form`**: Represents the form state, including values, errors, and form-specific status (e.g., isValid, isSubmitting).
+- **`enhance`**: A function or utility for use form functionality.
 
 ## Props
 
