@@ -35,7 +35,9 @@ npm install svelte-simple-form zod
 		initialValue: { name: '', age: 0, example: '' },
 		schema,
 		onSubmit: async (data) => {
+			await new Promise((r) => setTimeout(r, 500)); // simulate fetch server
 			console.log(data);
+			form.setInitialValue(data); // refresh form, isDirty will be false again
 		}
 	});
 </script>
@@ -64,7 +66,8 @@ npm install svelte-simple-form zod
 
 ## State
 
-- **`data`**: Form data
+- **`data`**: Form data value
+- **`initialValue`**: Form initial value
 - **`errors`**: Error messages, organized as an object `{ fieldName: string[] }`
 - **`isValid`**: Boolean indicating if the form is valid
 - **`isSubmitting`**: Boolean indicating if the form is being submitted
@@ -72,6 +75,7 @@ npm install svelte-simple-form zod
 
 ## Methods
 
+- **`setInitialValue(value)`**: Set the initial value of a form
 - **`setField(field, value)`**: Set the value of a form field dynamically
 - **`reset()`**: Reset all form fields to their initial values
 - **`resetField(field)`**: Reset a specific form field
