@@ -1,0 +1,147 @@
+<script lang="ts">
+	import { useForm } from '$lib/index.ts';
+	import { z } from 'zod';
+
+	const schema = z.object({
+		name: z.string().min(1),
+		age: z.number().positive(),
+		hobbies: z.array(z.string()),
+		tags: z
+			.array(
+				z.object({
+					key: z.string(),
+					label: z.string()
+				})
+			)
+			.default([])
+	});
+
+	type DataType = z.infer<typeof schema>;
+
+	const form = useForm<DataType>({
+		initialValue: {
+			name: 'Harry',
+			age: 18,
+			hobbies: [],
+			tags: []
+		},
+		schema,
+		onSubmit: async (data) => {
+			await new Promise((r) => setTimeout(r, 500));
+			console.log(data);
+		},
+		onChange: (f) => {
+			//
+		}
+	});
+</script>
+
+<div>
+	<form use:form.enhance>
+		{JSON.stringify(form)}
+		<br /><br />
+		{JSON.stringify(form.isValid ? 'valid' : 'invalid')}
+		<br /><br />
+		{JSON.stringify(form.errors)}
+		<br /><br />
+		<div>
+			<input type="text" bind:value={form.data.name} />
+			{#if form.errors?.name}
+				<p>{form.errors?.name?.join(', ')}</p>
+			{/if}
+		</div>
+		<br /><br />
+		<input type="number" bind:value={form.data.age} />
+		<br />
+		<br />
+		<label for="coding">
+			<input
+				type="checkbox"
+				value="Coding"
+				id="coding"
+				checked={form.arrayField('hobbies').have('Coding')}
+				onchange={(e) => {
+					const elm = e.target as HTMLInputElement;
+					const value = elm.value;
+					if (elm.checked) {
+						form.arrayField('hobbies').add(value, 10);
+					} else {
+						form.arrayField('hobbies').remove(value);
+					}
+				}}
+			/>
+			<span>Coding</span>
+		</label>
+		<label for="running">
+			<input
+				type="checkbox"
+				value="Running"
+				id="running"
+				checked={form.arrayField('hobbies').have('Running')}
+				onchange={(e) => {
+					const elm = e.target as HTMLInputElement;
+					const value = elm.value;
+					if (elm.checked) {
+						form.arrayField('hobbies').add(value);
+					} else {
+						form.arrayField('hobbies').remove(value);
+					}
+				}}
+			/>
+			<span>Running</span>
+		</label>
+		<br /><br />
+		<label for="human">
+			<input
+				type="checkbox"
+				id="human"
+				checked={form.arrayField('tags').have({ key: 'human', label: 'Human' })}
+				onchange={(e) => {
+					const elm = e.target as HTMLInputElement;
+					const value = {
+						key: 'human',
+						label: 'Human'
+					};
+					if (elm.checked) {
+						form.arrayField('tags').add(value);
+					} else {
+						form.arrayField('tags').remove(value);
+					}
+				}}
+			/>
+			<span>Human</span>
+		</label>
+		<label for="man">
+			<input
+				type="checkbox"
+				id="man"
+				checked={form.arrayField('tags').have({ key: 'man', label: 'Man' })}
+				onchange={(e) => {
+					const elm = e.target as HTMLInputElement;
+					const value = {
+						key: 'man',
+						label: 'Man'
+					};
+					if (elm.checked) {
+						form.arrayField('tags').add(value);
+					} else {
+						form.arrayField('tags').remove(value);
+					}
+				}}
+			/>
+			<span>Man</span>
+		</label>
+		<br />
+		<br />
+		<button
+			type="button"
+			onclick={() => {
+				// form.setField('name', 'Macan wk');
+				// form.resetField('name');
+				// form.reset();
+				form.validate('name');
+			}}>Change</button
+		>
+		<button type="submit">Submit</button>
+	</form>
+</div>
