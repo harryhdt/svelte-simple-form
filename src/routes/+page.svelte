@@ -18,7 +18,7 @@
 
 	type DataType = z.infer<typeof schema>;
 
-	const form = useForm<DataType>({
+	const { form, enhance } = useForm<DataType>({
 		initialValue: {
 			name: 'Harry',
 			age: 18,
@@ -31,18 +31,17 @@
 			console.log(data);
 		},
 		onChange: (f) => {
-			//
+			// f is the form itself
 		}
 	});
 </script>
 
 <div>
-	<form use:form.enhance>
-		{JSON.stringify(form)}
+	<form use:enhance>
+		Form: <pre>{JSON.stringify(form, null, 2)}</pre>
 		<br /><br />
-		{JSON.stringify(form.isValid ? 'valid' : 'invalid')}
-		<br /><br />
-		{JSON.stringify(form.errors)}
+		Error:
+		<pre>{JSON.stringify(form.errors, null, 2)}</pre>
 		<br /><br />
 		<div>
 			<input type="text" bind:value={form.data.name} />
@@ -50,10 +49,13 @@
 				<p>{form.errors?.name?.join(', ')}</p>
 			{/if}
 		</div>
-		<br /><br />
-		<input type="number" bind:value={form.data.age} />
-		<br />
-		<br />
+		<div>
+			<input type="number" bind:value={form.data.age} />
+			{#if form.errors?.age}
+				<p>{form.errors?.age?.join(', ')}</p>
+			{/if}
+		</div>
+		<span>Hobbies</span>
 		<label for="coding">
 			<input
 				type="checkbox"
@@ -91,6 +93,7 @@
 			<span>Running</span>
 		</label>
 		<br /><br />
+		<span>Tags</span>
 		<label for="human">
 			<input
 				type="checkbox"
@@ -133,12 +136,7 @@
 		</label>
 		<br />
 		<br />
-		<button
-			type="button"
-			onclick={() => {
-				form.reset();
-			}}>Reset</button
-		>
+		<button type="button" onclick={() => form.reset()}>Reset</button>
 		<button type="submit">Submit</button>
 	</form>
 </div>
