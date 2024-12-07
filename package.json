@@ -1,7 +1,19 @@
 {
 	"name": "svelte-simple-form",
-	"version": "0.0.2",
+	"version": "0.1.0",
 	"license": "MIT",
+	"keywords": [
+		"sveltekit",
+		"svelte",
+		"zod",
+		"form",
+		"validation",
+		"typescript",
+		"svelte-form",
+		"zod-form",
+		"ssf",
+		"svelte-simple-form"
+	],
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run package",
