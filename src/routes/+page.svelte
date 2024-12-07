@@ -136,11 +136,8 @@
 		<button
 			type="button"
 			onclick={() => {
-				// form.setField('name', 'Macan wk');
-				// form.resetField('name');
-				// form.reset();
-				form.validate('name');
-			}}>Change</button
+				form.reset();
+			}}>Reset</button
 		>
 		<button type="submit">Submit</button>
 	</form>
