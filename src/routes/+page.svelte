@@ -29,6 +29,7 @@
 		onSubmit: async (data) => {
 			await new Promise((r) => setTimeout(r, 500));
 			console.log(data);
+			form.setInitialValue(data);
 		},
 		onChange: (f) => {
 			// f is the form itself
