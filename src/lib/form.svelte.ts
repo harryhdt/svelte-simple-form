@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { z, ZodIssue } from 'zod';
+import { untrack } from 'svelte';
+import type { z } from 'zod';
 
 type FormProps<T> = {
 	initialValue: T;
@@ -13,20 +14,29 @@ type ArrayKeys<T> = keyof {
 	[K in keyof T as T[K] extends Array<any> ? K : never]: T[K];
 };
 
-type ConvertToEmptyArrays<T> = {
-	[K in keyof T]: T[K] extends any[]
-		? string[]
+type ZodError<T, V> = {
+	[K in keyof T]?: T[K] extends Array<infer U>
+		? U extends object
+			? // @ts-ignore
+				{ [index: string | number | undefined]: ZodError<U, V> }
+			: // @ts-ignore
+				{ [index: string | number | undefined]: V }
 		: T[K] extends object
-			? ConvertToEmptyArrays<T[K]>
-			: string[];
+			? ZodError<T[K], V>
+			: V;
 };
 
 export default function useForm<T>({ initialValue, onSubmit, onChange, schema }: FormProps<T>) {
-	const initialErrors: ConvertToEmptyArrays<typeof initialValue> = JSON.parse(
+	const initialErrors: ZodError<typeof initialValue, string[]> = JSON.parse(
 		JSON.stringify(initialValue, (_, value) =>
 			typeof value === 'object' && !Array.isArray(value) ? value : []
 		)
 	);
+	const initialTouched = Object.keys(initialValue!).reduce((acc, key) => {
+		// @ts-ignore
+		acc[key] = false;
+		return acc;
+	}, {}) as Record<keyof T, boolean>;
 
 	const form = $state({
 		initialValue,
@@ -35,6 +45,7 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 		isValid: true,
 		isSubmitting: false,
 		isDirty: false,
+		touched: initialTouched,
 		setInitialValue: (value: T) => {
 			form.initialValue = value;
 		},
@@ -48,7 +59,7 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 			form.data[field] = form.initialValue[field];
 		},
 		arrayField: <K extends ArrayKeys<T>>(field: K) => {
-			type V = T[K] extends (infer U)[] ? U : any;
+			type V = [T[K]] extends [never[]] ? any : T[K] extends (infer U)[] ? U : any;
 			return {
 				add: (value: V, index?: number) => {
 					if (Number.isInteger(index) && index! >= 0) {
@@ -70,6 +81,8 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 			};
 		},
 		submit: async (callback?: (data: T) => any) => {
+			form.validate();
+			if (!form.isValid) return;
 			form.isSubmitting = true;
 			if (callback) await callback(form.data);
 			// @ts-ignore
@@ -78,38 +91,23 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 		},
 		validate: (field?: keyof T) => {
 			if (schema) {
-				const mergeErrors = (initialErrors: any, result: any) => {
-					for (const key in result) {
-						if (Array.isArray(result[key])) {
-							if (result[key].length > 0) {
-								initialErrors[key] = result[key];
-							}
-						} else if (typeof result[key] === 'object' && result[key] !== null) {
-							if (initialErrors[key]) {
-								initialErrors[key] = mergeErrors(initialErrors[key], result[key]);
-							} else {
-								initialErrors[key] = result[key];
-							}
+				const transformToErrorArrays = (obj: any) => {
+					const result = {};
+					for (const key in obj) {
+						if (key === '_errors') {
+							continue; // Skip the top-level _errors key
+						}
+						if (obj[key]._errors && obj[key]._errors.length > 0) {
+							// @ts-ignore
+							result[key] = obj[key]._errors;
+						} else if (typeof obj[key] === 'object' && obj[key] !== null) {
+							// @ts-ignore
+							result[key] = transformToErrorArrays(obj[key]);
+						} else {
+							// @ts-ignore
+							result[key] = [];
 						}
 					}
-					return initialErrors;
-				};
-				const mappedZodErrors = (issues: ZodIssue[] | undefined) => {
-					const result: Record<string, any> = {};
-					issues?.forEach((issue) => {
-						const path = issue.path;
-						let current = result;
-						for (let i = 0; i < path.length; i++) {
-							const key = path[i];
-							if (i === path.length - 1) {
-								if (!current[key]) current[key] = [];
-								current[key].push(issue.message);
-							} else {
-								if (!current[key]) current[key] = {};
-								current = current[key];
-							}
-						}
-					});
 					return result;
 				};
 				if (field) {
@@ -118,27 +116,53 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 						.pick({ [field]: true })
 						.safeParse({ [field]: form.data[field] });
 					if (!validation.success) form.isValid = false;
-					const result = mappedZodErrors(validation.error?.issues);
-					form.errors = mergeErrors(JSON.parse(JSON.stringify(initialErrors)), result);
+					const result = transformToErrorArrays(validation.error?.format() ?? {});
+					if (!Array.isArray(initialErrors[field])) {
+						// @ts-ignore
+						result[field] = {
+							...initialErrors[field],
+							// @ts-ignore
+							...result[field]
+						};
+					}
+					form.errors = {
+						...form.errors,
+						// @ts-ignore
+						[field]: result[field] ?? []
+					};
 				} else {
 					const validation = schema.safeParse(form.data);
 					form.isValid = validation.success;
-					const result = mappedZodErrors(validation.error?.issues);
-					form.errors = mergeErrors(JSON.parse(JSON.stringify(initialErrors)), result);
+					form.errors = transformToErrorArrays(
+						validation.error?.format() ?? {}
+					) as typeof initialErrors;
 				}
 			}
 		}
 	});
 
 	$effect(() => {
-		const equal = Object.keys(form.initialValue!).every(
+		const equal = Object.keys(form.data!).every((key) => {
 			// @ts-ignore
-			(key) => JSON.stringify(form.data[key]) === JSON.stringify(form.initialValue[key])
-		);
+			const eq = JSON.stringify(form.data[key]) === JSON.stringify(form.initialValue[key]);
+			return eq;
+		});
 		form.isDirty = !equal;
-		if (onChange) onChange(form as any);
-		//
-		if (schema) form.validate();
+		untrack(() => (onChange ? onChange(form as any) : null));
+	});
+
+	Object.keys(form.data!).forEach((key) => {
+		$effect(() => {
+			// @ts-ignore
+			if (JSON.stringify(form.data[key]) !== JSON.stringify(form.initialValue[key])) {
+				// @ts-ignore
+				form.touched[key] = true;
+			}
+			untrack(() => {
+				// @ts-ignore
+				if (form.touched[key]) form.validate(key);
+			});
+		});
 	});
 
 	const enhance = (node: HTMLFormElement) => {
