@@ -17,17 +17,15 @@ type ArrayKeys<T> = keyof {
 type ZodError<T, V> = {
 	[K in keyof T]?: T[K] extends Array<infer U>
 		? U extends object
-			? // @ts-ignore
-				{ [index: string | number | undefined]: ZodError<U, V> }
-			: // @ts-ignore
-				{ [index: string | number | undefined]: V }
+			? { [index: string | number]: ZodError<U, V> }
+			: { [index: string | number]: V }
 		: T[K] extends object
 			? ZodError<T[K], V>
 			: V;
 };
 
 export default function useForm<T>({ initialValue, onSubmit, onChange, schema }: FormProps<T>) {
-	const initialErrors: ZodError<typeof initialValue, string[]> = JSON.parse(
+	const initialErrors: ZodError<typeof initialValue, string[] | undefined> = JSON.parse(
 		JSON.stringify(initialValue, (_, value) =>
 			typeof value === 'object' && !Array.isArray(value) ? value : []
 		)
