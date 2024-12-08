@@ -91,6 +91,24 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 		},
 		validate: (field?: keyof T) => {
 			if (schema) {
+				const areAllErrorsEmpty = (errors: any) => {
+					for (const key in errors) {
+						const value = errors[key];
+
+						if (Array.isArray(value)) {
+							// Check if the array is not empty
+							if (value.length > 0) {
+								return false;
+							}
+						} else if (typeof value === 'object' && value !== null) {
+							// Recursively check nested objects
+							if (!areAllErrorsEmpty(value)) {
+								return false;
+							}
+						}
+					}
+					return true;
+				};
 				const transformToErrorArrays = (obj: any) => {
 					const result = {};
 					for (const key in obj) {
@@ -130,6 +148,9 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 						// @ts-ignore
 						[field]: result[field] ?? []
 					};
+					//
+					const noErrors = areAllErrorsEmpty(form.errors);
+					if (noErrors) form.isValid = true;
 				} else {
 					const validation = schema.safeParse(form.data);
 					form.isValid = validation.success;
