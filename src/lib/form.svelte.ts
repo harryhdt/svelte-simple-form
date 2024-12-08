@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { z } from 'zod';
+import type { z, ZodIssue } from 'zod';
 
 type FormProps<T> = {
 	initialValue: T;
@@ -9,21 +9,29 @@ type FormProps<T> = {
 	schema?: z.ZodObject<any>;
 };
 
-type ArrayKeys<T> = {
-	[K in keyof T]: T[K] extends any[] ? K : never;
-}[keyof T];
+type ArrayKeys<T> = keyof {
+	[K in keyof T as T[K] extends Array<any> ? K : never]: T[K];
+};
+
+type ConvertToEmptyArrays<T> = {
+	[K in keyof T]: T[K] extends any[]
+		? string[]
+		: T[K] extends object
+			? ConvertToEmptyArrays<T[K]>
+			: string[];
+};
 
 export default function useForm<T>({ initialValue, onSubmit, onChange, schema }: FormProps<T>) {
-	const initialErrors = Object.keys(initialValue!).reduce((acc, key) => {
-		// @ts-ignore
-		acc[key] = [];
-		return acc;
-	}, {});
-	//
+	const initialErrors: ConvertToEmptyArrays<typeof initialValue> = JSON.parse(
+		JSON.stringify(initialValue, (_, value) =>
+			typeof value === 'object' && !Array.isArray(value) ? value : []
+		)
+	);
+
 	const form = $state({
 		initialValue,
 		data: initialValue,
-		errors: <{ [K in keyof T]: string[] }>initialErrors,
+		errors: initialErrors,
 		isValid: true,
 		isSubmitting: false,
 		isDirty: false,
@@ -40,7 +48,7 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 			form.data[field] = form.initialValue[field];
 		},
 		arrayField: <K extends ArrayKeys<T>>(field: K) => {
-			type V = T[K] extends (infer U)[] ? U : never;
+			type V = T[K] extends (infer U)[] ? U : any;
 			return {
 				add: (value: V, index?: number) => {
 					if (Number.isInteger(index) && index! >= 0) {
@@ -70,33 +78,53 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 		},
 		validate: (field?: keyof T) => {
 			if (schema) {
+				const mergeErrors = (initialErrors: any, result: any) => {
+					for (const key in result) {
+						if (Array.isArray(result[key])) {
+							if (result[key].length > 0) {
+								initialErrors[key] = result[key];
+							}
+						} else if (typeof result[key] === 'object' && result[key] !== null) {
+							if (initialErrors[key]) {
+								initialErrors[key] = mergeErrors(initialErrors[key], result[key]);
+							} else {
+								initialErrors[key] = result[key];
+							}
+						}
+					}
+					return initialErrors;
+				};
+				const mappedZodErrors = (issues: ZodIssue[] | undefined) => {
+					const result: Record<string, any> = {};
+					issues?.forEach((issue) => {
+						const path = issue.path;
+						let current = result;
+						for (let i = 0; i < path.length; i++) {
+							const key = path[i];
+							if (i === path.length - 1) {
+								if (!current[key]) current[key] = [];
+								current[key].push(issue.message);
+							} else {
+								if (!current[key]) current[key] = {};
+								current = current[key];
+							}
+						}
+					});
+					return result;
+				};
 				if (field) {
 					const validation = schema
 						// @ts-ignore
 						.pick({ [field]: true })
 						.safeParse({ [field]: form.data[field] });
 					if (!validation.success) form.isValid = false;
-					const result = validation.error?.issues
-						?.filter((x: any) => x.path[0] === field)
-						.map((x: any) => x.message);
-					if (result) {
-						form.errors[field] = result;
-					}
+					const result = mappedZodErrors(validation.error?.issues);
+					form.errors = mergeErrors(JSON.parse(JSON.stringify(initialErrors)), result);
 				} else {
 					const validation = schema.safeParse(form.data);
 					form.isValid = validation.success;
-					const result = validation.error?.issues?.reduce((acc: any, x: any) => {
-						const field = x.path[0];
-						if (!acc[field]) {
-							acc[field] = [];
-						}
-						acc[field].push(x.message);
-						return acc;
-					}, {});
-					form.errors = {
-						...initialErrors,
-						...result
-					};
+					const result = mappedZodErrors(validation.error?.issues);
+					form.errors = mergeErrors(JSON.parse(JSON.stringify(initialErrors)), result);
 				}
 			}
 		}
