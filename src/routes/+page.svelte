@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { useForm } from '$lib/index.ts';
-	import { untrack } from 'svelte';
-	import { string, z } from 'zod';
+	import { z } from 'zod';
 
 	const schema = z.object({
 		name: z.string().min(1),
