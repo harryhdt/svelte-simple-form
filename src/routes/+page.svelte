@@ -55,7 +55,12 @@
 
 <div style="font-size: 15px;font-family: Verdana, Geneva, Tahoma, sans-serif;margin: 20px 10px;">
 	<form use:enhance>
-		svelte-simple-form <pre style="font-size: 10px;">{JSON.stringify(form, null, 2)}</pre>
+		svelte-simple-form <pre
+			style="font-size: 10px;max-height: 300px;overflow:auto;background-color: #f5f5f5;padding:10px;">{JSON.stringify(
+				form,
+				null,
+				2
+			)}</pre>
 		<br /><br />
 		<hr />
 		<br /><br />
@@ -156,6 +161,12 @@
 		<br />
 		<br />
 		<div>
+			<input type="text" bind:value={form.data.nested.a} placeholder="a" />
+			{#if form.errors?.nested.a}
+				<p style="font-size: 12px;color: red">{form.errors?.nested.a?.join(', ')}</p>
+			{/if}
+		</div>
+		<div>
 			<input type="text" bind:value={form.data.nested.c.c2} placeholder="c2" />
 			{#if form.errors?.nested.c.c2}
 				<p style="font-size: 12px;color: red">{form.errors?.nested.c.c2?.join(', ')}</p>
@@ -164,6 +175,8 @@
 		<br />
 		<br />
 		<button type="button" onclick={() => form.reset()}>Reset</button>
-		<button type="submit">Submit</button>
+		<button type="submit" disabled={!form.isValid}
+			>Submit {form.isValid ? '' : '(disabled when isValid: false)'}</button
+		>
 	</form>
 </div>
