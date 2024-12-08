@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { useForm } from '$lib/index.ts';
-	import { z } from 'zod';
+	import { untrack } from 'svelte';
+	import { string, z } from 'zod';
 
 	const schema = z.object({
 		name: z.string().min(1),
 		age: z.number().positive(),
+		nickname: z.string().min(1),
 		hobbies: z.array(z.string()),
 		tags: z
 			.array(
 				z.object({
-					key: z.string(),
-					label: z.string()
+					key: z.string({ message: 'key is should string' }),
+					label: z.string({ message: 'label is should string' })
 				})
 			)
 			.default([]),
@@ -19,7 +21,10 @@
 			b: z.string(),
 			c: z.object({
 				c1: z.string(),
-				c2: z.string().min(1, 'c2 is required, this is custom message')
+				c2: z.string().min(1, 'c2 is required, this is custom message'),
+				c3: z.object({
+					c31: z.string().min(1, 'c31 is required, this is custom message')
+				})
 			})
 		})
 	});
@@ -29,6 +34,7 @@
 	const { form, enhance } = useForm<DataType>({
 		initialValue: {
 			name: 'Harry',
+			nickname: '',
 			age: 18,
 			hobbies: [],
 			tags: [],
@@ -37,7 +43,10 @@
 				b: '',
 				c: {
 					c1: '',
-					c2: ''
+					c2: '',
+					c3: {
+						c31: ''
+					}
 				}
 			}
 		},
@@ -68,9 +77,15 @@
 		<br />
 		<br />
 		<div>
-			<input type="text" bind:value={form.data.name} />
+			<input type="text" bind:value={form.data.name} oninput={() => form.validate('name')} />
 			{#if form.errors?.name}
 				<p style="font-size: 12px;color: red">{form.errors?.name?.join(', ')}</p>
+			{/if}
+		</div>
+		<div>
+			<input type="text" bind:value={form.data.nickname} placeholder="nickname..." />
+			{#if form.errors?.nickname}
+				<p style="font-size: 12px;color: red">{form.errors?.nickname?.join(', ')}</p>
 			{/if}
 		</div>
 		<div>
@@ -116,6 +131,29 @@
 			/>
 			<span>Running</span>
 		</label>
+		<label for="hiking">
+			<input
+				type="checkbox"
+				value="2"
+				id="hiking"
+				checked={form.arrayField('hobbies').have(2 as any)}
+				onchange={(e) => {
+					const elm = e.target as HTMLInputElement;
+					const value = parseInt(elm.value);
+					if (elm.checked) {
+						form.arrayField('hobbies').add(value as any);
+					} else {
+						form.arrayField('hobbies').remove(value as any);
+					}
+				}}
+			/>
+			<span>Hiking (error)</span>
+		</label>
+		<p style="font-size: 12px;color: red">
+			{Object.keys(form.errors.hobbies || {}).length
+				? Object.values(form.errors.hobbies || {}).join(', ')
+				: ''}
+		</p>
 		<br /><br />
 		<span>Tags</span>
 		<label for="human">
@@ -158,22 +196,55 @@
 			/>
 			<span>Man</span>
 		</label>
+		<label for="woman">
+			<input
+				type="checkbox"
+				id="woman"
+				checked={form.arrayField('tags').have({ key: 2 as any, label: 2 as any })}
+				onchange={(e) => {
+					const elm = e.target as HTMLInputElement;
+					const value = {
+						key: 2,
+						label: 2
+					};
+					if (elm.checked) {
+						form.arrayField('tags').add(value as any);
+					} else {
+						form.arrayField('tags').remove(value as any);
+					}
+				}}
+			/>
+			<span>Woman (error)</span>
+		</label>
+		<p style="font-size: 12px;color: red">
+			{Object.keys(form.errors.tags || {}).length ? JSON.stringify(form.errors.tags) : ''}
+		</p>
+		<br />
+		<br />
+		Nested: a, c.c2, c.c3.c31
 		<br />
 		<br />
 		<div>
 			<input type="text" bind:value={form.data.nested.a} placeholder="a" />
-			{#if form.errors?.nested.a}
+			{#if form.errors?.nested?.a}
 				<p style="font-size: 12px;color: red">{form.errors?.nested.a?.join(', ')}</p>
 			{/if}
 		</div>
 		<div>
 			<input type="text" bind:value={form.data.nested.c.c2} placeholder="c2" />
-			{#if form.errors?.nested.c.c2}
+			{#if form.errors?.nested?.c?.c2}
 				<p style="font-size: 12px;color: red">{form.errors?.nested.c.c2?.join(', ')}</p>
+			{/if}
+		</div>
+		<div>
+			<input type="text" bind:value={form.data.nested.c.c3.c31} placeholder="c31" />
+			{#if form.errors?.nested?.c?.c3?.c31}
+				<p style="font-size: 12px;color: red">{form.errors?.nested.c.c3.c31?.join(', ')}</p>
 			{/if}
 		</div>
 		<br />
 		<br />
+		<button type="button" onclick={() => form.validate()}>Validate</button>
 		<button type="button" onclick={() => form.reset()}>Reset</button>
 		<button type="submit" disabled={!form.isValid}
 			>Submit {form.isValid ? '' : '(disabled when isValid: false)'}</button
