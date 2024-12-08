@@ -78,20 +78,20 @@
 		<br />
 		<div>
 			<input type="text" bind:value={form.data.name} oninput={() => form.validate('name')} />
-			{#if form.errors?.name}
-				<p style="font-size: 12px;color: red">{form.errors?.name?.join(', ')}</p>
+			{#if form.errors.name}
+				<p style="font-size: 12px;color: red">{form.errors.name.join(', ')}</p>
 			{/if}
 		</div>
 		<div>
 			<input type="text" bind:value={form.data.nickname} placeholder="nickname..." />
-			{#if form.errors?.nickname}
-				<p style="font-size: 12px;color: red">{form.errors?.nickname?.join(', ')}</p>
+			{#if form.errors.nickname}
+				<p style="font-size: 12px;color: red">{form.errors.nickname.join(', ')}</p>
 			{/if}
 		</div>
 		<div>
 			<input type="number" bind:value={form.data.age} />
-			{#if form.errors?.age}
-				<p style="font-size: 12px;color: red">{form.errors?.age?.join(', ')}</p>
+			{#if form.errors.age}
+				<p style="font-size: 12px;color: red">{form.errors.age.join(', ')}</p>
 			{/if}
 		</div>
 		<span>Hobbies</span>
@@ -226,19 +226,19 @@
 		<br />
 		<div>
 			<input type="text" bind:value={form.data.nested.a} placeholder="a" />
-			{#if form.errors?.nested?.a}
+			{#if form.errors.nested?.a}
 				<p style="font-size: 12px;color: red">{form.errors?.nested.a?.join(', ')}</p>
 			{/if}
 		</div>
 		<div>
 			<input type="text" bind:value={form.data.nested.c.c2} placeholder="c2" />
-			{#if form.errors?.nested?.c?.c2}
+			{#if form.errors.nested?.c?.c2}
 				<p style="font-size: 12px;color: red">{form.errors?.nested.c.c2?.join(', ')}</p>
 			{/if}
 		</div>
 		<div>
 			<input type="text" bind:value={form.data.nested.c.c3.c31} placeholder="c31" />
-			{#if form.errors?.nested?.c?.c3?.c31}
+			{#if form.errors.nested?.c?.c3?.c31}
 				<p style="font-size: 12px;color: red">{form.errors?.nested.c.c3.c31?.join(', ')}</p>
 			{/if}
 		</div>
