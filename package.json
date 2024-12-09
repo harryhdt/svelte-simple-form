@@ -3,7 +3,10 @@
 	"version": "0.1.6",
 	"license": "MIT",
 	"homepage": "https://svelte-simple-form.harryhdt.dev",
-	"repository": "git+https://github.com/harryhdt/svelte-simple-form.git",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/harryhdt/svelte-simple-form.git"
+	},
 	"keywords": [
 		"sveltekit",
 		"svelte",
