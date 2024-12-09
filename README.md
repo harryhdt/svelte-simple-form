@@ -64,7 +64,7 @@ npm install svelte-simple-form zod
 - **`onChange`**: Callback for form state change
 - **`schema`**: Zod validation schema
 
-## State
+## State `form.{state}`
 
 - **`data`**: Form data value
 - **`initialValue`**: Form initial value
@@ -72,8 +72,9 @@ npm install svelte-simple-form zod
 - **`isValid`**: Boolean indicating if the form is valid
 - **`isSubmitting`**: Boolean indicating if the form is being submitted
 - **`isDirty`**: Boolean indicating if any field has been modified
+- **`touched`**: Touched field, organized as an object `{ fieldName: boolean }`
 
-## Methods
+## Methods `form.{method()}`
 
 - **`setInitialValue(value)`**: Set the initial value of a form
 - **`setField(field, value)`**: Set the value of a form field dynamically
