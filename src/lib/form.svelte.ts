@@ -52,6 +52,10 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 		},
 		reset: () => {
 			form.data = structuredClone($state.snapshot(form.initialValue)) as T;
+			form.errors = structuredClone(initialErrors);
+			form.isValid = true;
+			form.isDirty = false;
+			form.touched = structuredClone(initialTouched);
 		},
 		resetField: (field: keyof T) => {
 			form.data[field] = structuredClone(form.initialValue[field]);
