@@ -50,6 +50,22 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 		setField: <K extends keyof T>(field: K, value: T[K]) => {
 			form.data[field] = structuredClone(value);
 		},
+		setError: <K extends keyof T>(field: K, error: (typeof initialErrors)[K]) => {
+			form.errors[field] = structuredClone(error);
+		},
+		setErrors: (errors: typeof initialErrors) => {
+			form.errors = structuredClone($state.snapshot(errors)!);
+		},
+		setIsDirty: (dirty: boolean = true) => {
+			form.isDirty = dirty;
+		},
+		setTouched: <K extends keyof T>(field: K | typeof initialTouched, touched: boolean = true) => {
+			if (typeof field === 'object') {
+				form.touched = structuredClone(field);
+			} else {
+				form.touched[field] = touched;
+			}
+		},
 		reset: () => {
 			form.data = structuredClone($state.snapshot(form.initialValue)) as T;
 			form.errors = structuredClone(initialErrors);
