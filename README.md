@@ -78,6 +78,10 @@ npm install svelte-simple-form zod
 
 - **`setInitialValue(value)`**: Set the initial value of a form
 - **`setField(field, value)`**: Set the value of a form field dynamically
+- **`setError(field, value)`**: Set an error message for a specific field
+- **`setErrors(value)`**: Set multiple error messages at once by passing an object
+- **`setIsDirty(value?)`**: Set form isDirty, with optional value
+- **`setTouched(field or object, fieldValue?)`**: Mark a specific field(with optional value) or set multiple fields as touched
 - **`reset()`**: Reset all form fields to their initial values
 - **`resetField(field)`**: Reset a specific form field
 - **`arrayField(field)`**: Manage array fields `{add, remove, have}`
