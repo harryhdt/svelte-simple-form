@@ -243,6 +243,23 @@
 		</div>
 		<br />
 		<br />
+		<button type="button" onclick={() => form.setError('name', ['Change name :)'])}
+			>Set name error</button
+		>
+		<button type="button" onclick={() => form.setIsDirty()}>Set is dirty</button>
+		<button
+			type="button"
+			onclick={() => {
+				form.setTouched({
+					age: true,
+					hobbies: true,
+					tags: true,
+					name: true,
+					nested: true,
+					nickname: true
+				});
+			}}>Set is touched</button
+		>
 		<button type="button" onclick={() => form.validate()}>Validate</button>
 		<button type="button" onclick={() => form.reset()}>Reset</button>
 		<button type="submit" disabled={!form.isValid}
