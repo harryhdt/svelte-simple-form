@@ -58,6 +58,7 @@ npm install svelte-simple-form zod
 - **[Simple](https://github.com/harryhdt/svelte-simple-form/blob/main/example/simple.md)**
 - **[Array](https://github.com/harryhdt/svelte-simple-form/blob/main/example/array.md)**
 - **[Nested](https://github.com/harryhdt/svelte-simple-form/blob/main/example/nested.md)**
+- **[File](https://github.com/harryhdt/svelte-simple-form/blob/main/example/file.md)**
 - **[Form Actions](https://github.com/harryhdt/svelte-simple-form/blob/main/example/form-actions.md)**
 
 ## API Overview
