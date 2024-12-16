@@ -19,7 +19,7 @@ type ZodError<T, V> = {
 		? U extends object
 			? { [index: string | number]: ZodError<U, V> }
 			: { [index: string | number]: V }
-		: T[K] extends object
+		: T[K] extends Record<string | number, unknown>
 			? ZodError<T[K], V>
 			: V;
 };
