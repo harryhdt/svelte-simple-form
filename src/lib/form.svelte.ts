@@ -66,6 +66,9 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 				form.touched[field] = touched;
 			}
 		},
+		setIsSubmitting: (submitting: boolean = true) => {
+			form.isSubmitting = submitting;
+		},
 		reset: () => {
 			form.data = structuredClone($state.snapshot(form.initialValue)) as T;
 			form.errors = structuredClone(initialErrors);
@@ -177,6 +180,7 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 					) as typeof initialErrors;
 				}
 			}
+			return form.isValid;
 		}
 	});
 
