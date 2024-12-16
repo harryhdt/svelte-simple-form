@@ -11,6 +11,7 @@ A simple yet powerful, lightweight form handling library for Svelte 5, designed 
 - **Dynamic Field Handling**: Dynamically set and reset form fields.
 - **Array Field Management**: Add, remove, and check values in arrays.
 - **Form Validation**: Validate all fields or a specific field easily.
+- **SvelteKit Form Actions** Seamless integration into SvelteKit's form actions
 
 ## Installation
 
@@ -46,11 +47,18 @@ npm install svelte-simple-form zod
 	<input type="text" bind:value={form.data.name} />
 	<input type="number" bind:value={form.data.age} />
 	<input type="text" oninput={(e) => form.setField('example', e.target.value)} />
-	<p>Error name: {form.errors.name}</p>
+	<p>Error name: {form.errors.name.join(', ')}</p>
 	<button type="button" onclick={() => form.reset()}>Reset</button>
 	<button>Submit</button>
 </form>
 ```
+
+## Examples
+
+- **[Simple](https://github.com/harryhdt/svelte-simple-form/blob/main/example/simple.md)**
+- **[Array](https://github.com/harryhdt/svelte-simple-form/blob/main/example/array.md)**
+- **[Nested](https://github.com/harryhdt/svelte-simple-form/blob/main/example/nested.md)**
+- **[Form Actions](https://github.com/harryhdt/svelte-simple-form/blob/main/example/form-actions.md)**
 
 ## API Overview
 
@@ -82,6 +90,7 @@ npm install svelte-simple-form zod
 - **`setErrors(value)`**: Set multiple error messages at once by passing an object
 - **`setIsDirty(value?)`**: Set form isDirty, with optional value
 - **`setTouched(field or object, fieldValue?)`**: Mark a specific field(with optional value) or set multiple fields as touched
+- **`setIsSubmitting(value?)`** Set form isSubmitting, with optinal value
 - **`reset()`**: Reset all form fields to their initial values
 - **`resetField(field)`**: Reset a specific form field
 - **`arrayField(field)`**: Manage array fields `{add, remove, have}`
