@@ -44,11 +44,40 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 		isSubmitting: false,
 		isDirty: false,
 		touched: initialTouched,
+		capture: () => {
+			const info = {
+				initialValue: $state.snapshot(form.initialValue),
+				data: $state.snapshot(form.data),
+				errors: $state.snapshot(form.errors),
+				touched: $state.snapshot(form.touched),
+				isDirty: $state.snapshot(form.isDirty),
+				isValid: $state.snapshot(form.isValid),
+				isSubmitting: $state.snapshot(form.isSubmitting)
+			};
+			return structuredClone(info);
+		},
+		populate: (info: ReturnType<typeof form.capture>) => {
+			form.data = structuredClone($state.snapshot(info.data)) as any;
+			form.errors = structuredClone($state.snapshot(info.errors)) as any;
+			form.touched = structuredClone($state.snapshot(info.touched)) as any;
+			form.isDirty = info.isDirty;
+			form.isValid = info.isValid;
+			form.isSubmitting = info.isSubmitting;
+		},
 		setInitialValue: (value: T) => {
-			form.initialValue = structuredClone(value);
+			form.initialValue = structuredClone({ ...value });
 		},
 		setField: <K extends keyof T>(field: K, value: T[K]) => {
 			form.data[field] = structuredClone(value);
+		},
+		setData: <K extends keyof T>(...args: [K, T[K]] | [typeof initialValue]) => {
+			if (args.length === 1) {
+				const [field] = args;
+				form.data = structuredClone({ ...field }) as T;
+			} else {
+				const [field, value] = args;
+				form.data[field] = structuredClone(value);
+			}
 		},
 		setError: <K extends keyof T>(field: K, error: (typeof initialErrors)[K]) => {
 			form.errors[field] = structuredClone(error);
