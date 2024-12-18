@@ -86,6 +86,7 @@ npm install svelte-simple-form zod
 ## Methods `form.{method()}`
 
 - **`setInitialValue(value)`**: Set the initial value of a form
+- **`setData(field or object, fieldValue?)`**: Set data for a specific field or multiple fields at once
 - **`setField(field, value)`**: Set the value of a form field dynamically
 - **`setError(field, value)`**: Set an error message for a specific field
 - **`setErrors(value)`**: Set multiple error messages at once by passing an object
@@ -101,6 +102,8 @@ npm install svelte-simple-form zod
 - **`submit()`**: Manual trigger the form submission
 - **`validate()`**: Validate the form all fields
 - **`validate(field)`**: Validate the form specific field
+- **`capture()`**: Retrieve all form data in its current state, commonly stored in svelte `store` or `$state`
+- **`populate(value)`**: Populate the form with previously saved data `form.serialize()`
 
 ## License
 
