@@ -103,7 +103,7 @@ npm install svelte-simple-form zod
 - **`validate()`**: Validate the form all fields
 - **`validate(field)`**: Validate the form specific field
 - **`capture()`**: Retrieve all form data in its current state, commonly stored in svelte `store` or `$state`
-- **`populate(value)`**: Populate the form with previously saved data `form.serialize()`
+- **`populate(value)`**: Populate the form with previously saved data `form.capture()`
 
 ## License
 
