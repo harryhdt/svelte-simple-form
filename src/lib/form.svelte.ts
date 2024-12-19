@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { untrack } from 'svelte';
-import type { z } from 'zod';
+import { tick, untrack } from 'svelte';
+import { ZodEffects, type z } from 'zod';
 
 type FormProps<T> = {
 	initialValue: T;
 	onSubmit?: (data: T) => Promise<void>;
 	onChange?: (form: ReturnType<typeof useForm<T>>) => void;
-	schema?: z.ZodObject<any>;
+	schema?: z.ZodObject<any> | z.ZodEffects<any>;
 };
 
 type ArrayKeys<T> = keyof {
@@ -139,7 +139,7 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 			else if (onSubmit) await onSubmit($state.snapshot(form.data));
 			form.isSubmitting = false;
 		},
-		validate: (field?: keyof T) => {
+		validate: (field?: keyof T | (keyof T)[]) => {
 			if (schema) {
 				const areAllErrorsEmpty = (errors: any) => {
 					for (const key in errors) {
@@ -178,10 +178,34 @@ export default function useForm<T>({ initialValue, onSubmit, onChange, schema }:
 					}
 					return result;
 				};
-				if (field) {
-					const validation = schema
+				if (field && Array.isArray(field)) {
+					const keys = field.reduce((acc, field) => {
 						// @ts-ignore
-						.pick({ [field]: true })
+						acc[field] = form.touched[field];
+						return acc;
+					}, {});
+					const validation = schema.safeParse(form.data);
+					// if (!validation.success) form.isValid = false;
+					const result = transformToErrorArrays(validation.error?.format() ?? {});
+					const filteredErrors = Object.keys(keys).reduce((acc, key) => {
+						// @ts-ignore
+						if (keys[key]) {
+							// @ts-ignore
+							acc[key] = result[key] ?? [];
+						}
+						return acc;
+					}, {});
+					tick().then(() => {
+						form.errors = {
+							...form.errors,
+							...filteredErrors
+						};
+					});
+				} else if (field) {
+					const validation = (schema instanceof ZodEffects ? schema._def.schema : schema)
+						.pick({
+							[field]: true
+						})
 						.safeParse({ [field]: form.data[field] });
 					if (!validation.success) form.isValid = false;
 					const result = transformToErrorArrays(validation.error?.format() ?? {});
