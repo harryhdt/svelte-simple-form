@@ -21,6 +21,11 @@
 	<br />
 	<a href="https://github.com/harryhdt/svelte-simple-form/blob/main/example/file.md">File</a>
 	<br />
+	<a
+		href="https://github.com/harryhdt/svelte-simple-form/blob/main/example/password-confirmation.md"
+		>Password Confirmation</a
+	>
+	<br />
 	<a href="https://github.com/harryhdt/svelte-simple-form/blob/main/example/form-actions.md"
 		>Form Actions (SvelteKit)</a
 	>

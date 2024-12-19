@@ -59,6 +59,7 @@ npm install svelte-simple-form zod
 - **[Array](https://github.com/harryhdt/svelte-simple-form/blob/main/example/array.md)**
 - **[Nested](https://github.com/harryhdt/svelte-simple-form/blob/main/example/nested.md)**
 - **[File](https://github.com/harryhdt/svelte-simple-form/blob/main/example/file.md)**
+- **[Password Confirmation](https://github.com/harryhdt/svelte-simple-form/blob/main/example/password-confirmation.md)**
 - **[Form Actions](https://github.com/harryhdt/svelte-simple-form/blob/main/example/form-actions.md)**
 
 ## API Overview
@@ -101,7 +102,7 @@ npm install svelte-simple-form zod
   - **`have(value)`**: Check if a value exists in the array
 - **`submit()`**: Manual trigger the form submission
 - **`validate()`**: Validate the form all fields
-- **`validate(field)`**: Validate the form specific field
+- **`validate(field or fields)`**: Validate the form specific field or fields array
 - **`capture()`**: Retrieve all form data in its current state, commonly stored in svelte `store` or `$state`
 - **`populate(value)`**: Populate the form with previously saved data `form.capture()`
 
