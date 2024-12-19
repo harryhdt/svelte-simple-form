@@ -46,7 +46,7 @@
 		<br />
 		<br />
 		<div>
-			<input type="text" bind:value={form.data.name} oninput={() => form.validate('name')} />
+			<input type="text" bind:value={form.data.name} />
 			{#if form.errors.name?.length}
 				<p style="font-size: 12px;color: red">{form.errors.name.join(', ')}</p>
 			{/if}
