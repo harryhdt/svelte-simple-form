@@ -1,3 +1,12 @@
+<div style="background-color: #fff1c4; padding: 10px; border-radius: 5px;color:#bd9104">
+	<strong>Warning: Alpha Version</strong>
+	<br />
+  <strong>Important:</strong> Please note that a <strong>beta version</strong> is available which includes breaking changes compared to this alpha version.
+	<br />
+	This alpha version is limited to v0.1.13.
+</div>
+<br />
+
 # Svelte Simple Form
 
 A simple yet powerful, lightweight form handling library for Svelte 5, designed with flexibility in mind giving you full control without being opinionated. It integrates seamlessly with Zod for validation. With built-in TypeScript autocompletion, error prevention, and a straightforward API, you can create forms that are both robust and easy to manage.
