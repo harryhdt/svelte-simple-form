@@ -9,17 +9,21 @@ type Primitive = string | number | boolean | null | undefined;
 
 type ArrayKey = `${number}`; // use string-number to make it work in paths
 
-type Path<T> = T extends Primitive
-	? ''
-	: {
-			[K in keyof T]: K extends string
-				? T[K] extends Array<infer U>
-					? `${K}` | `${K}.${ArrayKey}` | `${K}.${ArrayKey}.${Path<U>}`
-					: T[K] extends object
-						? `${K}` | `${K}.${Path<T[K]>}`
-						: `${K}`
-				: never;
-		}[keyof T];
+type Prev = [never, 0, 1, 2, 3, 4, 5];
+
+type Path<T, D extends number = 5> = [D] extends [never]
+	? never
+	: T extends Primitive
+		? ''
+		: {
+				[K in keyof T]: K extends string
+					? T[K] extends Array<infer U>
+						? `${K}` | `${K}.${ArrayKey}` | `${K}.${ArrayKey}.${Path<U, Prev[D]>}`
+						: T[K] extends object
+							? `${K}` | `${K}.${Path<T[K], Prev[D]>}`
+							: `${K}`
+					: never;
+			}[keyof T];
 
 type FormProps<T> = {
 	initialValues: T;
