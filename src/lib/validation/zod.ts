@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getByPath } from '$lib/helper.ts';
+import { getByPath } from '../helper.js';
 import { z } from 'zod';
 
 type FlatZodErrors = Record<string, string[]>;
