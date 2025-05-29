@@ -25,3 +25,4 @@ vite.config.ts.timestamp-*
 
 # Test
 src/routes/test/**/*
+note.md

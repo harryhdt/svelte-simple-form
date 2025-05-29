@@ -1,120 +1,187 @@
-<div style="background-color: #fff1c4; padding: 10px; border-radius: 5px;color:#bd9104">
-	<strong>Warning: Alpha Version</strong>
-	<br />
-  <strong>Important:</strong> Please note that a <strong>beta version</strong> is available which includes breaking changes compared to this alpha version.
-	<br />
-	This alpha version is limited to v0.1.13.
-</div>
-<br />
+# 📝 Svelte Simple Form
 
-# Svelte Simple Form
+A lightweight, **type-safe**, and **reactive** form state management hook for **Svelte 5**, featuring:
 
-A simple yet powerful, lightweight form handling library for Svelte 5, designed with flexibility in mind giving you full control without being opinionated. It integrates seamlessly with Zod for validation. With built-in TypeScript autocompletion, error prevention, and a straightforward API, you can create forms that are both robust and easy to manage.
+- Nested field paths support
+- Validation integration with [Zod](https://github.com/colinhacks/zod)
+- Dirty tracking, touched fields, and submission state
+- Minimal dependencies & boilerplate — designed for **Svelte 5’s new reactive primitives**
 
-## Features
+---
 
-- **TypeScript Support**: Enjoy smart autocompletion, making form handling effortless.
-- **State Management**: Track `isValid`, `isSubmitting`, and `isDirty` states.
-- **Data Management**: Easily manage form data and errors.
-- **Zod Validation**: Automatically handle errors with Zod schema validation.
-- **Dynamic Field Handling**: Dynamically set and reset form fields.
-- **Array Field Management**: Add, remove, and check values in arrays.
-- **Form Validation**: Validate all fields or a specific field easily.
-- **SvelteKit Form Actions** Seamless integration into SvelteKit's form actions
-
-## Installation
+## 🚀 Installation
 
 ```bash
-npm install svelte-simple-form zod
+npm install svelte-simple-form
 ```
 
-## Usage
+Optionally use Zod for validation
+
+```bash
+npm install zod
+```
+
+**Note:** This hook is built to work seamlessly with **Svelte 5's reactive system**, using `$state`, `$effect`, and `tick`. Make sure your project is on Svelte 5 or later.
+
+---
+
+## 🎯 `useForm<T>(props: FormProps<T>)`
+
+Creates and returns the reactive `form` object managing form state, validation, and events.
+
+### Parameters
+
+| Name            | Type                                                       | Description                            |
+| --------------- | ---------------------------------------------------------- | -------------------------------------- |
+| `initialValues` | `T` Automatically                                          | Initial values for the form fields.    |
+| `validation`    | `{ zod: schema, relatedFields: Record<string, string[]> }` | Zod schema & related field validation. |
+| `onSubmit`      | Optional async callback                                    | Called on successful submission.       |
+| `onChange`      | Optional callback                                          | Called on any field update.            |
+| `onReset`       | Optional callback                                          | Called when form resets.               |
+
+### Returns
+
+```ts
+{
+  form: {
+    initialValues: T;
+    data: T;
+    errors: Record<Path<T>, string[] | undefined>;
+    isValid: boolean;
+    isSubmitting: boolean;
+    isDirty: boolean;
+    touched: Record<Path<T>, boolean | undefined>;
+
+    setInitialValues(values: T, options?: { reset?: boolean }): void;
+    setIsDirty(dirty?: boolean): void;
+    setIsSubmitting(submitting?: boolean): void;
+
+    reset(): void;
+    resetField(field: Path<T>): void;
+
+    validate(field?: Path<T> | Path<T>[]): boolean;
+
+    submit(callback?: (data: T) => any): Promise<void>;
+
+    handler(node: HTMLFormElement): void;
+  }
+}
+```
+
+---
+
+## 🛠️ Methods & Usage Details
+
+### `setInitialValues(values: T, options?: { reset?: boolean })`
+
+- Set new initial values for the form.
+- Optionally reset the current form data to the new initial values.
+
+### `setIsDirty(dirty?: boolean)`
+
+- Manually mark the form as dirty or clean.
+
+### `setIsSubmitting(submitting?: boolean)`
+
+- Manually set submitting state (e.g., show spinner).
+
+### `reset()`
+
+- Reset form data to initial values.
+- Clear errors and touched fields.
+- Calls `onReset` callback if provided.
+
+### `resetField(field: Path<T>)`
+
+- Reset a single field (and its nested children) to its initial value.
+- Clears touched state for the reset field.
+
+### `validate(field?: Path<T> | Path<T>[])`
+
+- Run validation on the entire form or specific fields using Zod.
+- Clears errors on validated fields and sets new errors if any.
+- Returns `true` if form is valid; `false` otherwise.
+
+### `submit(callback?: (data: T) => any)`
+
+- Perform validation (if configured).
+- If valid, calls provided callback or `onSubmit`.
+- Manages `isSubmitting` state during async submission.
+
+### `handler(node: HTMLFormElement)`
+
+- Attach a native submit event listener to a form element.
+- Calls `submit()` automatically on submit event, preventing default browser submission.
+
+---
+
+## 💡 Reactive State (Bind these in your Svelte components)
+
+| Property            | Type                                     | Description                                    |     |
+| ------------------- | ---------------------------------------- | ---------------------------------------------- | --- |
+| `form.data`         | `T`                                      | Current form data, bind inputs here.           |     |
+| `form.errors`       | `Record<Path<T>, string[] or undefined>` | Validation errors keyed by path.               |
+| `form.isValid`      | `boolean`                                | True if form has no validation errors.         |     |
+| `form.isSubmitting` | `boolean`                                | True if form is currently submitting.          |     |
+| `form.isDirty`      | `boolean`                                | True if form data differs from initial values. |     |
+| `form.touched`      | `Record\<Path<T>, boolean or undefined>` | Tracks which fields have been modified.        |
+
+---
+
+## 🧑‍💻 Example Usage in Svelte 5
 
 ```svelte
 <script lang="ts">
-	import useForm from 'svelte-simple-form';
+	import { useForm } from 'svelte-simple-form';
 	import { z } from 'zod';
 
 	const schema = z.object({
 		name: z.string().min(1, 'Name is required'),
-		age: z.number().min(18, 'You must be at least 18'),
-		example: z.string().min(1, 'Name is required')
+		age: z.number().min(18, 'Must be at least 18')
 	});
 
-	const { form, enhance } = useForm({
-		initialValue: { name: '', age: 0, example: '' },
-		schema,
+	const { form } = useForm({
+		initialValues: { name: '', age: 0 },
+		validation: { zod: schema },
 		onSubmit: async (data) => {
-			await new Promise((r) => setTimeout(r, 500)); // simulate fetch server
-			console.log(data);
-			form.setInitialValue(data); // refresh form, isDirty will be false again
+			alert(`Submitted: ${JSON.stringify(data)}`);
+		},
+		onChange: (field, value) => {
+			console.log(`Field ${field} changed to`, value);
+		},
+		onReset: () => {
+			console.log('Form was reset');
 		}
 	});
 </script>
 
-<form use:enhance>
-	<input type="text" bind:value={form.data.name} />
-	<input type="number" bind:value={form.data.age} />
-	<input type="text" oninput={(e) => form.setField('example', e.target.value)} />
-	<p>Error name: {form.errors.name.join(', ')}</p>
-	<button type="button" onclick={() => form.reset()}>Reset</button>
-	<button>Submit</button>
+<form use:form.handler>
+	<input type="text" bind:value={form.data.name} placeholder="Name" />
+	{#if form.errors['name']?.length}
+		<p style="color: red;">{form.errors['name'].join(', ')}</p>
+	{/if}
+
+	<input type="number" bind:value={form.data.age} placeholder="Age" />
+	{#if form.errors.age}
+		<p style="color: red;">{form.errors.age[0]}</p>
+	{/if}
+
+	<button type="submit" disabled={form.isSubmitting}>
+		{form.isSubmitting ? 'Submitting...' : 'Submit'}
+	</button>
+
+	<button type="button" on:click={() => form.reset()}> Reset </button>
 </form>
 ```
 
-## Examples
+---
 
-- **[Simple](https://github.com/harryhdt/svelte-simple-form/blob/main/example/simple.md)**
-- **[Array](https://github.com/harryhdt/svelte-simple-form/blob/main/example/array.md)**
-- **[Nested](https://github.com/harryhdt/svelte-simple-form/blob/main/example/nested.md)**
-- **[File](https://github.com/harryhdt/svelte-simple-form/blob/main/example/file.md)**
-- **[Password Confirmation](https://github.com/harryhdt/svelte-simple-form/blob/main/example/password-confirmation.md)**
-- **[Form Actions](https://github.com/harryhdt/svelte-simple-form/blob/main/example/form-actions.md)**
+## 💬 Tips & Notes
 
-## API Overview
-
-- **`form`**: Represents the form state, including values, errors, and form-specific status (e.g., isValid, isSubmitting).
-- **`enhance`**: A function or utility for use form functionality.
-
-## Props
-
-- **`initialValue`**: Initial form values
-- **`onSubmit`**: Callback for form submission
-- **`onChange`**: Callback for form state change
-- **`schema`**: Zod validation schema
-
-## State `form.{state}`
-
-- **`data`**: Form data value
-- **`initialValue`**: Form initial value
-- **`errors`**: Error messages, organized as an object `{ fieldName: string[] }`
-- **`isValid`**: Boolean indicating if the form is valid
-- **`isSubmitting`**: Boolean indicating if the form is being submitted
-- **`isDirty`**: Boolean indicating if any field has been modified
-- **`touched`**: Touched field, organized as an object `{ fieldName: boolean }`
-
-## Methods `form.{method()}`
-
-- **`setInitialValue(value)`**: Set the initial value of a form
-- **`setData(field or object, fieldValue?)`**: Set data for a specific field or multiple fields at once
-- **`setField(field, value)`**: Set the value of a form field dynamically
-- **`setError(field, value)`**: Set an error message for a specific field
-- **`setErrors(value)`**: Set multiple error messages at once by passing an object
-- **`setIsDirty(value?)`**: Set form isDirty, with optional value
-- **`setTouched(field or object, fieldValue?)`**: Mark a specific field(with optional value) or set multiple fields as touched
-- **`setIsSubmitting(value?)`** Set form isSubmitting, with optinal value
-- **`reset()`**: Reset all form fields to their initial values
-- **`resetField(field)`**: Reset a specific form field
-- **`arrayField(field)`**: Manage array fields `{add, remove, have}`
-  - **`add(value)`**: Add an item to the array field
-  - **`remove(value)`**: Remove an item from the array field
-  - **`have(value)`**: Check if a value exists in the array
-- **`submit()`**: Manual trigger the form submission
-- **`validate()`**: Validate the form all fields
-- **`validate(field or fields)`**: Validate the form specific field or fields array
-- **`capture()`**: Retrieve all form data in its current state, commonly stored in svelte `store` or `$state`
-- **`populate(value)`**: Populate the form with previously saved data `form.capture()`
-
-## License
-
-MIT
+- Designed specifically for **Svelte 5**, leveraging its reactive primitives (`$state`, `$effect`, `tick`).
+- Supports deeply nested objects and arrays with full type safety via `Path<T>`.
+- Validation is optional but highly recommended using [Zod](https://github.com/colinhacks/zod).
+- `onChange` is triggered for every changed field with path and new value.
+- Use `form.isDirty` to track if the user has modified the form.
+- `resetField` allows fine-grained reset of individual nested fields.
+- Use `form.handler` directive to bind submit event easily.
