@@ -187,3 +187,4 @@ Creates and returns the reactive `form` object managing form state, validation, 
 - Use `form.handler` directive to bind submit event easily.
 - Use `form.{state} = value` for manually change state value
 - Use `form.{data|errors|touched}.{field} = value` for manually change state field value
+- `initialValues` does not support nested string paths (like "body.height"), use objects instead.
