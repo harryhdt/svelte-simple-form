@@ -185,3 +185,5 @@ Creates and returns the reactive `form` object managing form state, validation, 
 - Use `form.isDirty` to track if the user has modified the form.
 - `resetField` allows fine-grained reset of individual nested fields.
 - Use `form.handler` directive to bind submit event easily.
+- Use `form.{state} = value` for manually change state value
+- Use `form.{data|errors|touched}.{field} = value` for manually change state field value
