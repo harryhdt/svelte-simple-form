@@ -45,6 +45,10 @@ export default function useForm<T>({
 	onChange,
 	onReset
 }: FormProps<T>) {
+	if (Object.keys(initialValues || {}).some((k) => k.includes('.'))) {
+		throw new Error('Nested paths are not supported');
+	}
+
 	const form = $state({
 		initialValues,
 		data: initialValues,
@@ -86,7 +90,7 @@ export default function useForm<T>({
 			tick().then(() => {
 				Object.keys(form.touched).forEach((key) => {
 					// @ts-ignore
-					if (key.startsWith(field)) form.touched[key] = undefined;
+					if (key.includes('.') && key.startsWith(field)) form.touched[key] = undefined;
 				});
 			});
 		},
@@ -167,6 +171,19 @@ export default function useForm<T>({
 				const v = $state.snapshot(getByPath(form.data, path));
 				if (onChange) {
 					onChange(path as Path<T>, v);
+				}
+				//
+				if (validation) {
+					if (!checkPath(form.data, path)) {
+						Object.keys(form.errors).forEach((key) => {
+							// @ts-ignore
+							if (key.includes('.') && key.startsWith(path)) form.errors[key] = undefined;
+						});
+						Object.keys(form.touched).forEach((key) => {
+							// @ts-ignore
+							if (key.includes('.') && key.startsWith(path)) form.touched[key] = undefined;
+						});
+					}
 				}
 			}
 			if (validation) {
