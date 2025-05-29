@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { tick, untrack } from 'svelte';
 import { z } from 'zod';
-import { checkPath, getByPath, getChangedPaths, setByPath } from './helper.ts';
-import { zodValidator } from './validation/zod.ts';
+import { checkPath, getByPath, getChangedPaths, setByPath } from './helper.js';
+import { zodValidator } from './validation/zod.js';
 
 type Primitive = string | number | boolean | null | undefined;
 
