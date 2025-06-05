@@ -59,7 +59,7 @@ Creates and returns the reactive `form` object managing form state, validation, 
     reset(): void;
     resetField(field: Path<T>): void;
 
-		setError(field: Path<T>, error: string | string[]): void;
+    setError(field: Path<T>, error: string | string[]): void;
 
     validate(field?: Path<T> | Path<T>[]): boolean;
 
@@ -146,7 +146,8 @@ Creates and returns the reactive `form` object managing form state, validation, 
 
 	const schema = z.object({
 		name: z.string().min(1, 'Name is required'),
-		email: z.string().email("This isn't an email")
+		email: z.string().email("This isn't an email"),
+		age: z.number().min(18, 'Must be at least 18')
 	});
 
 	const { form } = useForm({
