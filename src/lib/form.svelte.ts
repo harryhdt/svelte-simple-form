@@ -93,7 +93,7 @@ export default function useForm<T>({
 			});
 		},
 		setError: (field: Path<T>, error: string) => {
-			form.errors[field] = [error];
+			form.errors[field]?.push(error);
 		},
 		validate: (field?: Path<T> | Path<T>[]) => {
 			if (validation?.zod) {
