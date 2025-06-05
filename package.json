@@ -55,28 +55,28 @@
 		"@eslint/compat": "^1.2.9",
 		"@sveltejs/adapter-auto": "^6.0.1",
 		"@sveltejs/adapter-static": "^3.0.8",
-		"@sveltejs/kit": "^2.21.1",
+		"@sveltejs/kit": "^2.21.2",
 		"@sveltejs/package": "^2.3.11",
-		"@sveltejs/vite-plugin-svelte": "^5.0.3",
-		"@tailwindcss/vite": "^4.0.0",
-		"eslint": "^9.27.0",
+		"@sveltejs/vite-plugin-svelte": "^5.1.0",
+		"@tailwindcss/vite": "^4.1.8",
+		"eslint": "^9.28.0",
 		"eslint-config-prettier": "^10.1.5",
-		"eslint-plugin-svelte": "^3.9.0",
+		"eslint-plugin-svelte": "^3.9.1",
 		"globals": "^16.2.0",
 		"prettier": "^3.5.3",
 		"prettier-plugin-svelte": "^3.4.0",
-		"prettier-plugin-tailwindcss": "^0.6.11",
+		"prettier-plugin-tailwindcss": "^0.6.12",
 		"publint": "^0.3.12",
-		"svelte": "^5.33.6",
+		"svelte": "^5.33.14",
 		"svelte-check": "^4.2.1",
-		"tailwindcss": "^4.0.0",
+		"tailwindcss": "^4.1.8",
 		"typescript": "^5.8.3",
-		"typescript-eslint": "^8.33.0",
+		"typescript-eslint": "^8.33.1",
 		"vite": "^6.3.5",
 		"@lucide/svelte": "^0.513.0",
 		"shiki-code-block-svelte": "^0.0.3-beta.2"
 	},
 	"dependencies": {
-		"zod": "^3.25.34"
+		"zod": "^3.25.51"
 	}
 }
