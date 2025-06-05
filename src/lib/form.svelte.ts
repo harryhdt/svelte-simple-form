@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { tick, untrack } from 'svelte';
 import { z } from 'zod';
 import { checkPath, getByPath, getChangedPaths, setByPath } from './helper.js';
@@ -7,7 +5,7 @@ import { zodValidator } from './validation/zod.js';
 
 type Primitive = string | number | boolean | null | undefined;
 
-type ArrayKey = `${number}`; // use string-number to make it work in paths
+type ArrayKey = `${number}`;
 
 type Prev = [never, 0, 1, 2, 3, 4, 5];
 
@@ -93,6 +91,9 @@ export default function useForm<T>({
 					if (key.includes('.') && key.startsWith(field)) form.touched[key] = undefined;
 				});
 			});
+		},
+		setError: (field: Path<T>, error: string | string[]) => {
+			form.errors[field] = Array.isArray(error) ? error : [error];
 		},
 		validate: (field?: Path<T> | Path<T>[]) => {
 			if (validation?.zod) {
