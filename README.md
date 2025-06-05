@@ -59,7 +59,7 @@ Creates and returns the reactive `form` object managing form state, validation, 
     reset(): void;
     resetField(field: Path<T>): void;
 
-	 setError(field: Path<T>, error: string): void;
+	 setError(field: Path<T>, error: string | string[]): void;
 
     validate(field?: Path<T> | Path<T>[]): boolean;
 
@@ -98,7 +98,7 @@ Creates and returns the reactive `form` object managing form state, validation, 
 - Reset a single field (and its nested children) to its initial value.
 - Clears touched state for the reset field.
 
-### `setError(field: Path<T>, error: string)`
+### `setError(field: Path<T>, error: string | string[])`
 
 - Manually set an error for a specific field.
 - Like server from check email really exit in db
