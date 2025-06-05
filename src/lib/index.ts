@@ -1,1 +1,1 @@
-export { default as useForm } from './form.svelte.js';
+export { default as useForm } from './form.svelte';
