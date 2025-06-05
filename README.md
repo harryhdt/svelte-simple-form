@@ -59,7 +59,7 @@ Creates and returns the reactive `form` object managing form state, validation, 
     reset(): void;
     resetField(field: Path<T>): void;
 
-	 setError(field: Path<T>, error: string | string[]): void;
+		setError(field: Path<T>, error: string | string[]): void;
 
     validate(field?: Path<T> | Path<T>[]): boolean;
 
@@ -200,7 +200,7 @@ Creates and returns the reactive `form` object managing form state, validation, 
 	<div>
 		{#if submitJson}
 			<pre>
-			{submitJson}
+				{submitJson}
 			</pre>
 		{/if}
 	</div>
