@@ -1,3 +1,5 @@
+import type { Path, StandardObjectSchemaResult } from "./$types.ts";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function checkPath(obj: any, path: string): boolean {
 	const keys = path.split('.');
@@ -65,4 +67,22 @@ export function getChangedPaths(obj1: any, obj2: any, basePath = ''): string[] {
 
 	traverse(obj1, obj2, basePath);
 	return [...changed];
+}
+
+export function parseValidationResult<
+	T extends Record<string, unknown>
+>(
+	validationResult: StandardObjectSchemaResult<T>
+) {
+	const issues = validationResult.issues || [];
+	return issues.reduce((acc, issue) => {
+		const path: Path<T> = issue.path?.map((p) => {
+			if (typeof p === "object" && "key" in p) {
+				return p.key;
+			}
+			return p;
+		}).join('.') as Path<T> ?? '';
+		acc[path] = [...(acc[path] || []), issue.message];
+		return acc;
+	}, {} as Record<Path<T> | '', string[]>);
 }

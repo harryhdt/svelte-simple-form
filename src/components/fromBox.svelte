@@ -3,18 +3,25 @@
 	import Calendar from '@lucide/svelte/icons/calendar';
 	import User from '@lucide/svelte/icons/user';
 	import { z } from 'zod';
+	import * as v from 'valibot';
 
 	let submitJson = $state('');
 
-	const schema = z.object({
+	const zodSchema = z.object({
 		name: z.string().min(1, 'Name is required'),
 		email: z.string().email("This isn't an email"),
 		age: z.number().min(18, 'Must be at least 18')
 	});
 
+	const valibotSchema = v.object({
+		name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
+		email: v.pipe(v.string(), v.email("This isn't an email")),
+		age: v.pipe(v.number(), v.minValue(18, 'Must be at least 18'))
+	});
+
 	const { form } = useForm({
 		initialValues: { name: '', email: '', age: 0 },
-		validation: { zod: schema },
+		validation: { schema: valibotSchema },
 		onSubmit: async (data) => {
 			submitJson = JSON.stringify(data);
 			console.log(`Submitted: ${JSON.stringify(data)}`);
@@ -32,6 +39,10 @@
 		form.setError('email', 'Email really exit in db');
 	}
 </script>
+
+<pre>Form data:<br>{JSON.stringify(form.data, null, 2)}</pre>
+<br>
+<pre>Form errors:<br>{JSON.stringify(form.errors, null, 2)}</pre>
 
 <div>
 	<form use:form.handler class="mx-auto max-w-md space-y-6 rounded bg-white p-6 shadow">

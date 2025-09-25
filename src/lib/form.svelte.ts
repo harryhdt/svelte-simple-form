@@ -1,42 +1,22 @@
 import { tick, untrack } from 'svelte';
-import { z } from 'zod';
-import { checkPath, getByPath, getChangedPaths, setByPath } from './helper.js';
-import { zodValidator } from './validation/zod.js';
+import { checkPath, getByPath, getChangedPaths, parseValidationResult, setByPath } from './helper.js';
+import { type StandardObjectSchema, type Path } from './$types.ts';
 
-type Primitive = string | number | boolean | null | undefined;
-
-type ArrayKey = `${number}`;
-
-type Prev = [never, 0, 1, 2, 3, 4, 5];
-
-type Path<T, D extends number = 5> = [D] extends [never]
-	? never
-	: T extends Primitive
-		? ''
-		: {
-				[K in keyof T]: K extends string
-					? T[K] extends Array<infer U>
-						? `${K}` | `${K}.${ArrayKey}` | `${K}.${ArrayKey}.${Path<U, Prev[D]>}`
-						: T[K] extends object
-							? `${K}` | `${K}.${Path<T[K], Prev[D]>}`
-							: `${K}`
-					: never;
-			}[keyof T];
-
-type FormProps<T> = {
+type FormProps<T extends Record<string, unknown>> = {
 	initialValues: T;
 	validation?:
-		| {
-				zod?: z.ZodObject<any> | z.ZodEffects<any>;
-				relatedFields?: Record<string, string[]>;
-		  }
-		| undefined;
+	| {
+		/** @deprecated This property is deprecated and will be removed in a future release. */
+		zod?: StandardObjectSchema<T>;
+		schema?: StandardObjectSchema<T>;
+		relatedFields?: Record<string, string[]>;
+	};
 	onSubmit?: (data: T) => Promise<void>;
 	onChange?: (field: Path<T>, value: any) => void;
 	onReset?: () => void;
 };
 
-export default function useForm<T>({
+export default function useForm<T extends Record<string, unknown>>({
 	initialValues,
 	validation,
 	onSubmit,
@@ -46,6 +26,9 @@ export default function useForm<T>({
 	if (Object.keys(initialValues || {}).some((k) => k.includes('.'))) {
 		throw new Error('Nested paths are not supported');
 	}
+
+	/* The Standard Schema from either validation.schema or validation.zod */
+	const schema = validation?.schema || validation?.zod;
 
 	const form = $state({
 		initialValues,
@@ -95,8 +78,8 @@ export default function useForm<T>({
 		setError: (field: Path<T>, error: string | string[]) => {
 			form.errors[field] = Array.isArray(error) ? error : [error];
 		},
-		validate: (field?: Path<T> | Path<T>[]) => {
-			if (validation?.zod) {
+		validate: async (field?: Path<T> | Path<T>[]) => {
+			if (schema) {
 				let fields = Array.isArray(field) ? field : [field];
 				const related = validation.relatedFields || {};
 
@@ -110,26 +93,37 @@ export default function useForm<T>({
 					delete form.errors[f];
 				}
 
-				const errors = zodValidator(
-					validation.zod,
-					form.data,
-					field ? (fields as string | string[]) : undefined
+				// Validate form using the Standard Schema function
+				const validationResult = await schema['~standard'].validate(form.data);
+
+				// Parse the Standard Schema validation result into a flat object
+				const allFormErrors = parseValidationResult(validationResult);
+
+				// Filter out fields that aren't desired to have errors
+				const filteredErrors = Object.fromEntries(
+					Object.entries(
+						allFormErrors
+					).filter(
+						([key]) => fields.includes(key as Path<T>)
+					)
 				);
+
+				// Update the form errors with the filtered errors
 				form.errors = {
 					...form.errors,
-					...errors
+					...filteredErrors
 				};
 			}
 			return (
 				Object.keys(form.errors).length === 0 ||
-				// @ts-ignore
+				// @ts-expect-error
 				Object.keys(form.errors).every((key) => (form.errors[key]?.length || 0) === 0)
 			);
 		},
 		submit: async (callback?: (data: T) => any) => {
 			if (form.isSubmitting) return;
 			if (validation) {
-				form.validate();
+				await form.validate();
 				await tick();
 			}
 			if (!form.isValid) return;
@@ -188,7 +182,7 @@ export default function useForm<T>({
 				}
 			}
 			if (validation) {
-				form.validate(changedFields as Path<T>[]);
+				await form.validate(changedFields as Path<T>[]);
 			}
 
 			prevData = currentData;

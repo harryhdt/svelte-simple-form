@@ -1,87 +1,17 @@
 <script lang="ts">
 	import Eye from '@lucide/svelte/icons/eye';
-	import CodeBlock from 'shiki-code-block-svelte';
+	import CodeBlock from 'shiki-block-svelte';
 	import CodeIcon from '@lucide/svelte/icons/code';
 	import FromBox from '../components/fromBox.svelte';
+	import { onMount } from 'svelte';
 
 	let activeTab = $state('code');
 
-	const svelteComponentCode = `<script lang="ts">
-	import { useForm } from 'svelte-simple-form';
-	import { z } from 'zod';
-
-	let submitJson = $state('');
-
-	const schema = z.object({
-		name: z.string().min(1, 'Name is required'),
-		email: z.string().email("This isn't an email"),
-		age: z.number().min(18, 'Must be at least 18')
+	let formComponetSourceCode = $state('');
+	onMount(async () => {
+		const code = await import('../components/fromBox.svelte?raw');
+		formComponetSourceCode = code.default;
 	});
-
-	const { form } = useForm({
-		initialValues: { name: '', email: '', age: 0 },
-		validation: { zod: schema },
-		onSubmit: async (data) => {
-			submitJson = JSON.stringify(data);
-			console.log(\`Submitted: \${JSON.stringify(data)}\`);
-		},
-		onChange: (field, value) => {
-			submitJson = '';
-			console.log(\`Field \${field} changed to\`, value);
-		},
-		onReset: () => {
-			console.log('Form was reset');
-		}
-	});
-
-	function setEmailError() {
-		form.setError('email', 'Email really exit in db');
-	}
-<\/script>
-
-<div>
-	<form use:form.handler>
-		<!-- user name input -->
-		<div>
-			<input type="text" bind:value={form.data.name} placeholder="Name" />
-			{#if form.errors['name']?.length}
-				<p>{form.errors['name'][0]}</p>
-			{/if}
-		</div>
-
-		<!-- user email input -->
-		<div>
-			<input type="email" bind:value={form.data.email} placeholder="email" />
-			{#if form.errors['email']?.length}
-				<p>{form.errors['email'][0]}</p>
-			{/if}
-		</div>
-
-		<!-- user age input -->
-		<div>
-			<input type="number" bind:value={form.data.age} placeholder="Age" />
-			{#if form.errors.age}
-				<p>{form.errors.age[0]}</p>
-			{/if}
-		</div>
-
-		<div>
-			<button type="submit" disabled={form.isSubmitting}>
-				{form.isSubmitting ? 'Submitting...' : 'Submit'}
-			</button>
-
-			<button type="button" onclick={() => form.reset()}> Reset </button>
-			<button type="button" onclick={() => setEmailError()}> setEmailError </button>
-		</div>
-	</form>
-	<div>
-		{#if submitJson}
-			<pre>
-			{submitJson}
-			</pre>
-		{/if}
-	</div>
-</div>`;
 </script>
 
 <div class="mx-auto w-full max-w-4xl p-4">
@@ -121,7 +51,7 @@
 					theme={{
 						light: 'github-light'
 					}}
-					code={svelteComponentCode}
+					code={formComponetSourceCode}
 				/>
 			</div>
 		{:else if activeTab === 'preview'}
