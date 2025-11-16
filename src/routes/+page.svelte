@@ -37,6 +37,9 @@
 	function setEmailError() {
 		form.setError('email', 'Email really exit in db');
 	}
+	function removeEmailError() {
+		form.removeError('email');
+	}
 <\/script>
 
 <div>
@@ -72,6 +75,13 @@
 
 			<button type="button" onclick={() => form.reset()}> Reset </button>
 			<button type="button" onclick={() => setEmailError()}> setEmailError </button>
+			<button
+				type="button"
+				onclick={() => removeEmailError()}
+				class="rounded border bg-gray-100 px-4 py-2 text-gray-800 hover:bg-gray-200"
+			>
+				removeEmailError
+			</button>
 		</div>
 	</form>
 	<div>

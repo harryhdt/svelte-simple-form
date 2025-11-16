@@ -60,6 +60,7 @@ Creates and returns the reactive `form` object managing form state, validation, 
     resetField(field: Path<T>): void;
 
     setError(field: Path<T>, error: string | string[]): void;
+	removeError(field: Path<T>): void;
 
     validate(field?: Path<T> | Path<T>[]): boolean;
 
@@ -102,6 +103,10 @@ Creates and returns the reactive `form` object managing form state, validation, 
 
 - Manually set an error for a specific field.
 - Like server from check email really exit in db
+
+### `removeError(field: Path<T>)`
+
+- Manually remove an error from a specific field.
 
 ### `validate(field?: Path<T> | Path<T>[])`
 
@@ -169,6 +174,9 @@ Creates and returns the reactive `form` object managing form state, validation, 
 	function setEmailError() {
 		form.setError('email', 'Email really exit in db');
 	}
+	function removeEmailError() {
+		form.removeError('email');
+	}
 </script>
 
 <div>
@@ -196,6 +204,13 @@ Creates and returns the reactive `form` object managing form state, validation, 
 			</button>
 			<button type="button" onclick={() => form.reset()}> Reset </button>
 			<button type="button" onclick={() => setEmailError()}> setEmailError </button>
+			<button
+				type="button"
+				onclick={() => removeEmailError()}
+				class="rounded border bg-gray-100 px-4 py-2 text-gray-800 hover:bg-gray-200"
+			>
+				removeEmailError
+			</button>
 		</div>
 	</form>
 	<div>
@@ -218,7 +233,7 @@ Creates and returns the reactive `form` object managing form state, validation, 
 - `onChange` is triggered for every changed field with path and new value.
 - Use `form.isDirty` to track if the user has modified the form.
 - `resetField` allows fine-grained reset of individual nested fields.
-- `setError` allows manual setting of errors for specific fields.
+- `setError` and `removeError` allows manual setting of errors for specific fields.
 - Use `form.handler` directive to bind submit event easily.
 - Use `form.{state} = value` for manually change state value
 - Use `form.{data|errors|touched}.{field} = value` for manually change state field value
