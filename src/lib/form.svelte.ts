@@ -95,6 +95,9 @@ export default function useForm<T>({
 		setError: (field: Path<T>, error: string | string[]) => {
 			form.errors[field] = Array.isArray(error) ? error : [error];
 		},
+		removeError: (field: Path<T>) => {
+			delete form.errors[field];
+		},
 		validate: (field?: Path<T> | Path<T>[]) => {
 			if (validation?.zod) {
 				let fields = Array.isArray(field) ? field : [field];
