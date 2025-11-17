@@ -17,7 +17,7 @@
 <div>
 	<h1>Svelte Simple Form</h1>
 	<p>A simple yet powerful, lightweight form handling library for Svelte 5</p>
-	<a href="https://svelte-simple.harryhdt.dev" target="_blank"> Check docs </a> -
+	<a href="https://svelte-simple.pages.dev" target="_blank"> Check docs </a> -
 	<a href="https://github.com/harryhdt/svelte-simple-form" target="_blank">Github</a>
 </div>
 <div>
@@ -42,19 +42,9 @@
 	<div style="margin-top: 24px;">
 		Examples with validation:
 		<br />
-		<a
-			href="https://github.com/harryhdt/svelte-simple-form/tree/main/src/routes/examples/basic/+page.svelte"
-			target="_blank"
-		>
-			Basic
-		</a>
+		<a href="/examples/basic"> Basic </a>
 		-
-		<a
-			href="https://github.com/harryhdt/svelte-simple-form/tree/main/src/routes/examples/password/+page.svelte"
-			target="_blank"
-		>
-			Password
-		</a>
+		<a href="/examples/password"> Password </a>
 	</div>
 	<div style="margin-top: 24px;">
 		&copy; {new Date().getFullYear() || '2026'}
