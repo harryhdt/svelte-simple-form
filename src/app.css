@@ -1,13 +1,4 @@
-@import 'tailwindcss';
-
-.tab-button {
-	@apply cursor-pointer px-4 py-2 text-lg font-semibold transition-colors;
-}
-
-.tab-button.active {
-	@apply border-b-2 border-blue-500 text-blue-500;
-}
-
-.tab-content {
-	@apply mt-4;
+input,
+button {
+	padding: 4px 6px;
 }
