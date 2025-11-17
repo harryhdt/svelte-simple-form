@@ -1,7 +1,5 @@
 import { tick, untrack } from 'svelte';
-import { z } from 'zod';
 import { checkPath, getByPath, getChangedPaths, setByPath } from './helper.js';
-import { zodValidator } from './validation/zod.js';
 
 type Primitive = string | number | boolean | null | undefined;
 
@@ -25,24 +23,12 @@ type Path<T, D extends number = 5> = [D] extends [never]
 
 type FormProps<T> = {
 	initialValues: T;
-	validation?:
-		| {
-				zod?: z.ZodObject<any> | z.ZodEffects<any>;
-				relatedFields?: Record<string, string[]>;
-		  }
-		| undefined;
 	onSubmit?: (data: T) => Promise<void>;
 	onChange?: (field: Path<T>, value: any) => void;
 	onReset?: () => void;
 };
 
-export default function useForm<T>({
-	initialValues,
-	validation,
-	onSubmit,
-	onChange,
-	onReset
-}: FormProps<T>) {
+export default function useForm<T>({ initialValues, onSubmit, onChange, onReset }: FormProps<T>) {
 	if (Object.keys(initialValues || {}).some((k) => k.includes('.'))) {
 		throw new Error('Nested paths are not supported');
 	}
@@ -98,43 +84,8 @@ export default function useForm<T>({
 		removeError: (field: Path<T>) => {
 			delete form.errors[field];
 		},
-		validate: (field?: Path<T> | Path<T>[]) => {
-			if (validation?.zod) {
-				let fields = Array.isArray(field) ? field : [field];
-				const related = validation.relatedFields || {};
-
-				const extraFields = fields.map((f) => related[f as string] || []).flat();
-
-				fields = [...new Set([...fields, ...extraFields])] as Path<T>[];
-
-				// Clear current errors for those fields
-				for (const f of fields) {
-					// @ts-ignore
-					delete form.errors[f];
-				}
-
-				const errors = zodValidator(
-					validation.zod,
-					form.data,
-					field ? (fields as string | string[]) : undefined
-				);
-				form.errors = {
-					...form.errors,
-					...errors
-				};
-			}
-			return (
-				Object.keys(form.errors).length === 0 ||
-				// @ts-ignore
-				Object.keys(form.errors).every((key) => (form.errors[key]?.length || 0) === 0)
-			);
-		},
 		submit: async (callback?: (data: T) => any) => {
 			if (form.isSubmitting) return;
-			if (validation) {
-				form.validate();
-				await tick();
-			}
 			if (!form.isValid) return;
 			form.isSubmitting = true;
 			if (callback) await callback(form.data);
@@ -176,22 +127,6 @@ export default function useForm<T>({
 				if (onChange) {
 					onChange(path as Path<T>, v);
 				}
-				//
-				if (validation) {
-					if (!checkPath(form.data, path)) {
-						Object.keys(form.errors).forEach((key) => {
-							// @ts-ignore
-							if (key.includes('.') && key.startsWith(path)) form.errors[key] = undefined;
-						});
-						Object.keys(form.touched).forEach((key) => {
-							// @ts-ignore
-							if (key.includes('.') && key.startsWith(path)) form.touched[key] = undefined;
-						});
-					}
-				}
-			}
-			if (validation) {
-				form.validate(changedFields as Path<T>[]);
 			}
 
 			prevData = currentData;
