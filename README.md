@@ -2,10 +2,11 @@
 
 A lightweight, **type-safe**, and **reactive** form state management hook for **Svelte 5**, featuring:
 
+- Simply usage
+- Zero dependencies
 - Nested field paths support
-- Validation integration with [Zod](https://github.com/colinhacks/zod)
 - Dirty tracking, touched fields, and submission state
-- Minimal dependencies & boilerplate — designed for **Svelte 5’s new reactive primitives**
+- Designed for **Svelte 5’s new reactive primitives**
 
 ---
 
@@ -15,29 +16,26 @@ A lightweight, **type-safe**, and **reactive** form state management hook for **
 npm install svelte-simple-form
 ```
 
-Optionally use Zod for validation
-
-```bash
-npm install zod
-```
-
 **Note:** This hook is built to work seamlessly with **Svelte 5's reactive system**, using `$state`, `$effect`, and `tick`. Make sure your project is on Svelte 5 or later.
+
+## Guide & Documentation
+
+Check [Svelte Simple Form docs](https://svelte-simple.pages.dev/svelte-simple-form)
 
 ---
 
 ## 🎯 `useForm<T>(props: FormProps<T>)`
 
-Creates and returns the reactive `form` object managing form state, validation, and events.
+Creates and returns the reactive `form` object managing form state and events.
 
 ### Parameters
 
-| Name            | Type                                                       | Description                            |
-| --------------- | ---------------------------------------------------------- | -------------------------------------- |
-| `initialValues` | `T` Automatically                                          | Initial values for the form fields.    |
-| `validation`    | `{ zod: schema, relatedFields: Record<string, string[]> }` | Zod schema & related field validation. |
-| `onSubmit`      | Optional async callback                                    | Called on successful submission.       |
-| `onChange`      | Optional callback                                          | Called on any field update.            |
-| `onReset`       | Optional callback                                          | Called when form resets.               |
+| Name            | Type                    | Description                         |
+| --------------- | ----------------------- | ----------------------------------- |
+| `initialValues` | `T` Automatically       | Initial values for the form fields. |
+| `onSubmit`      | Optional async callback | Called on successful submission.    |
+| `onChange`      | Optional callback       | Called on any field update.         |
+| `onReset`       | Optional callback       | Called when form resets.            |
 
 ### Returns
 
@@ -61,8 +59,6 @@ Creates and returns the reactive `form` object managing form state, validation, 
 
     setError(field: Path<T>, error: string | string[]): void;
 	removeError(field: Path<T>): void;
-
-    validate(field?: Path<T> | Path<T>[]): boolean;
 
     submit(callback?: (data: T) => any): Promise<void>;
 
@@ -108,16 +104,9 @@ Creates and returns the reactive `form` object managing form state, validation, 
 
 - Manually remove an error from a specific field.
 
-### `validate(field?: Path<T> | Path<T>[])`
-
-- Run validation on the entire form or specific fields using Zod.
-- Clears errors on validated fields and sets new errors if any.
-- Returns `true` if form is valid; `false` otherwise.
-
 ### `submit(callback?: (data: T) => any)`
 
-- Perform validation (if configured).
-- If valid, calls provided callback or `onSubmit`.
+- Trigger submit form
 - Manages `isSubmitting` state during async submission.
 
 ### `handler(node: HTMLFormElement)`
@@ -140,87 +129,34 @@ Creates and returns the reactive `form` object managing form state, validation, 
 
 ---
 
-## 🧑‍💻 Example Usage in Svelte 5
+## 🧑‍💻 Example Usage
 
 ```svelte
 <script lang="ts">
-	import { useForm } from 'svelte-simple-form';
-	import { z } from 'zod';
-
-	let submitJson = $state('');
-
-	const schema = z.object({
-		name: z.string().min(1, 'Name is required'),
-		email: z.string().email("This isn't an email"),
-		age: z.number().min(18, 'Must be at least 18')
-	});
+	import useForm from 'svelte-simple-form';
 
 	const { form } = useForm({
-		initialValues: { name: '', email: '', age: 0 },
-		validation: { zod: schema },
-		onSubmit: async (data) => {
-			submitJson = JSON.stringify(data);
-			console.log(`Submitted: ${JSON.stringify(data)}`);
+		initialValues: {
+			name: 'John',
+			email: '',
+			age: 10
 		},
-		onChange: (field, value) => {
-			submitJson = '';
-			console.log(`Field ${field} changed to`, value);
-		},
-		onReset: () => {
-			console.log('Form was reset');
+		onSubmit: async (values) => {
+			await new Promise((resolve) => setTimeout(resolve, 2000));
+			console.log(values);
 		}
 	});
-
-	function setEmailError() {
-		form.setError('email', 'Email really exit in db');
-	}
-	function removeEmailError() {
-		form.removeError('email');
-	}
 </script>
 
-<div>
-	<form use:form.handler>
-		<!-- user name input -->
-		<div>
-			<input type="text" bind:value={form.data.name} placeholder="Name" />
-			{#if form.errors['name']?.length}
-				<p>{form.errors['name'][0]}</p>
-			{/if}
-		</div>
-
-		<!-- user email input -->
-		<div>
-			<input type="email" bind:value={form.data.email} placeholder="email" />
-			{#if form.errors['email']?.length}
-				<p>{form.errors['email'][0]}</p>
-			{/if}
-		</div>
-
-		<!-- form handler -->
-		<div>
-			<button type="submit" disabled={form.isSubmitting}>
-				{form.isSubmitting ? 'Submitting...' : 'Submit'}
-			</button>
-			<button type="button" onclick={() => form.reset()}> Reset </button>
-			<button type="button" onclick={() => setEmailError()}> setEmailError </button>
-			<button
-				type="button"
-				onclick={() => removeEmailError()}
-				class="rounded border bg-gray-100 px-4 py-2 text-gray-800 hover:bg-gray-200"
-			>
-				removeEmailError
-			</button>
-		</div>
-	</form>
-	<div>
-		{#if submitJson}
-			<pre>
-				{submitJson}
-			</pre>
-		{/if}
-	</div>
-</div>
+<form use:form.handler>
+	<input type="text" bind:value={form.data.name} placeholder="Name" />
+	<input type="email" bind:value={form.data.email} placeholder="email" />
+	<input type="number" bind:value={form.data.age} placeholder="Age" />
+	<button type="submit" disabled={form.isSubmitting}>
+		{form.isSubmitting ? 'Submitting...' : 'Submit'}
+	</button>
+	<button type="button" onclick={() => form.reset()}> Reset </button>
+</form>
 ```
 
 ---
@@ -229,8 +165,8 @@ Creates and returns the reactive `form` object managing form state, validation, 
 
 - Designed specifically for **Svelte 5**, leveraging its reactive primitives (`$state`, `$effect`, `tick`).
 - Supports deeply nested objects and arrays with full type safety via `Path<T>`.
-- Validation is optional but highly recommended using [Zod](https://github.com/colinhacks/zod).
-- `onChange` is triggered for every changed field with path and new value.
+- Validation is _unopinionated_ — you can use manual validation or any library you prefer.
+- `onChange` is triggered for every changed field with path and new value, you can use it for validate field.
 - Use `form.isDirty` to track if the user has modified the form.
 - `resetField` allows fine-grained reset of individual nested fields.
 - `setError` and `removeError` allows manual setting of errors for specific fields.
