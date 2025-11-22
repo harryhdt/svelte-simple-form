@@ -40,9 +40,14 @@
 		<button type="button" onclick={() => form.reset()}> Reset </button>
 	</form>
 	<div style="margin-top: 24px;">
-		Examples with validation:
+		Examples:
 		<br />
 		<a href="/examples/basic"> Basic </a>
+	</div>
+	<div style="margin-top: 12px;">
+		Examples with validation:
+		<br />
+		<a href="/examples/basic-validation"> Basic </a>
 		-
 		<a href="/examples/password"> Password </a>
 	</div>

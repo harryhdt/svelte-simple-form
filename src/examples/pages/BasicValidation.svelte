@@ -1,9 +1,29 @@
 <script lang="ts">
 	import useForm from '$lib/form.svelte.ts';
+	import { z } from 'zod';
+	import { zodValidator } from '../validators/zod.ts';
+
+	const schema = z.object({
+		name: z.string().min(1, 'Name is required'),
+		email: z.string().email("This isn't an email"),
+		age: z.number().min(18, 'Must be at least 18')
+	});
+	const validator = zodValidator(schema);
 
 	const { form } = useForm({
 		initialValues: { name: 'John', email: '', age: 10 },
+		onChange: (field) => {
+			const err = validator.validateField(field, form.data);
+			if (err) form.setError(field, err);
+			else form.removeError(field);
+		},
 		onSubmit: async (values) => {
+			const errors = validator.validateForm(values);
+
+			if (Object.keys(errors).length) {
+				form.errors = errors;
+			}
+
 			console.log('submitted', values);
 		}
 	});
@@ -18,3 +38,6 @@
 	</button>
 	<button type="button" onclick={() => form.reset()}> Reset </button>
 </form>
+<div style="white-space: wrap;font-size: 12px; margin-top: 16px">
+	{JSON.stringify(form.errors, null, 2)}
+</div>
