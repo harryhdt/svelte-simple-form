@@ -1,14 +1,30 @@
 <script lang="ts">
 	import useForm from '$lib/form.svelte.ts';
-	import { z } from 'zod';
-	import { zodValidator } from '../validators/zod.ts';
+	// import { z } from 'zod';
+	import { manualValidator } from '../validators/manual.ts';
+	// import { zodValidator } from '../validators/zod.ts';
 
-	const schema = z.object({
-		name: z.string().min(1, 'Name is required'),
-		email: z.string().email("This isn't an email"),
-		age: z.number().min(18, 'Must be at least 18')
+	// const schema = z.object({
+	// 	name: z.string().min(1, 'Name is required'),
+	// 	email: z.string().email("This isn't an email"),
+	// 	age: z.number().min(18, 'Must be at least 18')
+	// });
+	// const validator = zodValidator(schema);
+
+	const validator = manualValidator({
+		name: (v) => {
+			if (!v) return 'Name is required';
+			if (v.length < 1) return 'Name is required';
+		},
+		email: (v) => {
+			if (!v) return 'Email is required';
+			if (!v.includes('@')) return "This isn't an email";
+		},
+		age: (v) => {
+			if (!v) return 'Age is required';
+			if (v < 18) return 'Must be at least 18';
+		}
 	});
-	const validator = zodValidator(schema);
 
 	const { form } = useForm({
 		initialValues: { name: 'John', email: '', age: 10 },
@@ -22,6 +38,7 @@
 
 			if (Object.keys(errors).length) {
 				form.errors = errors;
+				return;
 			}
 
 			console.log('submitted', values);
