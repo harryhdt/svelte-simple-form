@@ -17,7 +17,7 @@
 <div>
 	<h1>Svelte Simple Form</h1>
 	<p>A simple yet powerful, lightweight form handling library for Svelte 5</p>
-	<a href="https://svelte-simple.pages.dev" target="_blank"> Check docs </a> -
+	<a href="https://svelte-simple.harryhdt.dev" target="_blank"> Check docs </a> -
 	<a href="https://github.com/harryhdt/svelte-simple-form" target="_blank">Github</a>
 </div>
 <div>
