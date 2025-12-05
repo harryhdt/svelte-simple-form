@@ -1,8 +1,8 @@
 <script lang="ts">
 	import useForm from '$lib/form.svelte.ts';
-	// import { z } from 'zod';
+	import { z } from 'zod';
 	import { manualValidator } from '../validators/manual.ts';
-	// import { zodValidator } from '../validators/zod.ts';
+	import { zodValidator } from '../validators/zod.ts';
 
 	// const schema = z.object({
 	// 	name: z.string().min(1, 'Name is required'),
@@ -28,19 +28,8 @@
 
 	const { form } = useForm({
 		initialValues: { name: 'John', email: '', age: 10 },
-		onChange: (field) => {
-			const err = validator.validateField(field, form.data);
-			if (err) form.setError(field, err);
-			else form.removeError(field);
-		},
+		validator,
 		onSubmit: async (values) => {
-			const errors = validator.validateForm(values);
-
-			if (Object.keys(errors).length) {
-				form.errors = errors;
-				return;
-			}
-
 			console.log('submitted', values);
 		}
 	});
