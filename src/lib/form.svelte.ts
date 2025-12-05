@@ -23,12 +23,42 @@ type Path<T, D extends number = 5> = [D] extends [never]
 
 type FormProps<T> = {
 	initialValues: T;
+	validator?: {
+		validateField: (field: Path<T>, form: ReturnType<typeof useForm<T>>['form']) => boolean;
+		validateForm: (form: ReturnType<typeof useForm<T>>['form']) => boolean;
+	};
 	onSubmit?: (data: T) => Promise<void>;
 	onChange?: (field: Path<T>, value: any) => void;
 	onReset?: () => void;
 };
 
-export default function useForm<T>({ initialValues, onSubmit, onChange, onReset }: FormProps<T>) {
+export type FormContext<T extends Record<string, any> = Record<string, any>> = {
+	data: T;
+	errors: Record<Path<T>, string[] | undefined>;
+	initialValues: T;
+	isValid: boolean;
+	isSubmitting: boolean;
+	isDirty: boolean;
+	touched: Record<Path<T>, boolean | undefined>;
+	handler: (node: HTMLFormElement) => void;
+	setErrors: (errors: Record<Path<T>, string[]>) => void;
+	setError: (field: Path<T>, error: string | string[]) => void;
+	removeError: (field: Path<T>) => void;
+	setInitialValues: (values: T, options?: { reset?: boolean }) => void;
+	setIsDirty: (dirty: boolean) => void;
+	setIsSubmitting: (submitting: boolean) => void;
+	reset: () => void;
+	resetField: (field: Path<T>) => void;
+	submit: (callback?: (data: T) => any) => Promise<void>;
+};
+
+export default function useForm<T>({
+	initialValues,
+	validator,
+	onSubmit,
+	onChange,
+	onReset
+}: FormProps<T>) {
 	if (Object.keys(initialValues || {}).some((k) => k.includes('.'))) {
 		throw new Error('Nested paths are not supported');
 	}
@@ -78,6 +108,9 @@ export default function useForm<T>({ initialValues, onSubmit, onChange, onReset 
 				});
 			});
 		},
+		setErrors: (errors: Record<Path<T>, string[]>) => {
+			form.errors = structuredClone(errors);
+		},
 		setError: (field: Path<T>, error: string | string[]) => {
 			form.errors[field] = Array.isArray(error) ? error : [error];
 		},
@@ -85,6 +118,10 @@ export default function useForm<T>({ initialValues, onSubmit, onChange, onReset 
 			delete form.errors[field];
 		},
 		submit: async (callback?: (data: T) => any) => {
+			if (validator) {
+				if (!validator.validateForm(form)) return;
+			}
+			//
 			if (form.isSubmitting) return;
 			if (!form.isValid) return;
 			form.isSubmitting = true;
@@ -126,6 +163,10 @@ export default function useForm<T>({ initialValues, onSubmit, onChange, onReset 
 				const v = $state.snapshot(getByPath(form.data, path));
 				if (onChange) {
 					onChange(path as Path<T>, v);
+				}
+				//
+				if (validator) {
+					validator.validateField(path as Path<T>, form);
 				}
 			}
 
