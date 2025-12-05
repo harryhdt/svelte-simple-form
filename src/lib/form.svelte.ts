@@ -1,7 +1,5 @@
 import { tick, untrack } from 'svelte';
-import { z } from 'zod';
 import { checkPath, getByPath, getChangedPaths, setByPath } from './helper.js';
-import { zodValidator } from './validation/zod.js';
 
 type Primitive = string | number | boolean | null | undefined;
 
@@ -25,20 +23,38 @@ type Path<T, D extends number = 5> = [D] extends [never]
 
 type FormProps<T> = {
 	initialValues: T;
-	validation?:
-		| {
-				zod?: z.ZodObject<any> | z.ZodEffects<any>;
-				relatedFields?: Record<string, string[]>;
-		  }
-		| undefined;
+	validator?: {
+		validateField: (field: Path<T>, form: ReturnType<typeof useForm<T>>['form']) => boolean;
+		validateForm: (form: ReturnType<typeof useForm<T>>['form']) => boolean;
+	};
 	onSubmit?: (data: T) => Promise<void>;
 	onChange?: (field: Path<T>, value: any) => void;
 	onReset?: () => void;
 };
 
+export type FormContext<T extends Record<string, any> = Record<string, any>> = {
+	data: T;
+	errors: Record<Path<T>, string[] | undefined>;
+	initialValues: T;
+	isValid: boolean;
+	isSubmitting: boolean;
+	isDirty: boolean;
+	touched: Record<Path<T>, boolean | undefined>;
+	handler: (node: HTMLFormElement) => void;
+	setErrors: (errors: Record<Path<T>, string[]>) => void;
+	setError: (field: Path<T>, error: string | string[]) => void;
+	removeError: (field: Path<T>) => void;
+	setInitialValues: (values: T, options?: { reset?: boolean }) => void;
+	setIsDirty: (dirty: boolean) => void;
+	setIsSubmitting: (submitting: boolean) => void;
+	reset: () => void;
+	resetField: (field: Path<T>) => void;
+	submit: (callback?: (data: T) => any) => Promise<void>;
+};
+
 export default function useForm<T>({
 	initialValues,
-	validation,
+	validator,
 	onSubmit,
 	onChange,
 	onReset
@@ -92,46 +108,21 @@ export default function useForm<T>({
 				});
 			});
 		},
+		setErrors: (errors: Record<Path<T>, string[]>) => {
+			form.errors = structuredClone(errors);
+		},
 		setError: (field: Path<T>, error: string | string[]) => {
 			form.errors[field] = Array.isArray(error) ? error : [error];
 		},
-		validate: (field?: Path<T> | Path<T>[]) => {
-			if (validation?.zod) {
-				let fields = Array.isArray(field) ? field : [field];
-				const related = validation.relatedFields || {};
-
-				const extraFields = fields.map((f) => related[f as string] || []).flat();
-
-				fields = [...new Set([...fields, ...extraFields])] as Path<T>[];
-
-				// Clear current errors for those fields
-				for (const f of fields) {
-					// @ts-ignore
-					delete form.errors[f];
-				}
-
-				const errors = zodValidator(
-					validation.zod,
-					form.data,
-					field ? (fields as string | string[]) : undefined
-				);
-				form.errors = {
-					...form.errors,
-					...errors
-				};
-			}
-			return (
-				Object.keys(form.errors).length === 0 ||
-				// @ts-ignore
-				Object.keys(form.errors).every((key) => (form.errors[key]?.length || 0) === 0)
-			);
+		removeError: (field: Path<T>) => {
+			delete form.errors[field];
 		},
 		submit: async (callback?: (data: T) => any) => {
-			if (form.isSubmitting) return;
-			if (validation) {
-				form.validate();
-				await tick();
+			if (validator) {
+				if (!validator.validateForm(form)) return;
 			}
+			//
+			if (form.isSubmitting) return;
 			if (!form.isValid) return;
 			form.isSubmitting = true;
 			if (callback) await callback(form.data);
@@ -174,21 +165,9 @@ export default function useForm<T>({
 					onChange(path as Path<T>, v);
 				}
 				//
-				if (validation) {
-					if (!checkPath(form.data, path)) {
-						Object.keys(form.errors).forEach((key) => {
-							// @ts-ignore
-							if (key.includes('.') && key.startsWith(path)) form.errors[key] = undefined;
-						});
-						Object.keys(form.touched).forEach((key) => {
-							// @ts-ignore
-							if (key.includes('.') && key.startsWith(path)) form.touched[key] = undefined;
-						});
-					}
+				if (validator) {
+					validator.validateField(path as Path<T>, form);
 				}
-			}
-			if (validation) {
-				form.validate(changedFields as Path<T>[]);
 			}
 
 			prevData = currentData;
