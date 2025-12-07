@@ -24,8 +24,8 @@ type Path<T, D extends number = 5> = [D] extends [never]
 type FormProps<T> = {
 	initialValues: T;
 	validator?: {
-		validateField: (field: Path<T>, form: ReturnType<typeof useForm<T>>['form']) => boolean;
-		validateForm: (form: ReturnType<typeof useForm<T>>['form']) => boolean;
+		validateField: (field: Path<T>, form: FormContext) => boolean | Promise<boolean>;
+		validateForm: (form: FormContext) => boolean | Promise<boolean>;
 	};
 	onSubmit?: (data: T) => Promise<void>;
 	onChange?: (field: Path<T>, value: any) => void;
@@ -37,16 +37,19 @@ export type FormContext<T extends Record<string, any> = Record<string, any>> = {
 	errors: Record<Path<T>, string[] | undefined>;
 	initialValues: T;
 	isValid: boolean;
+	isValidating: boolean;
 	isSubmitting: boolean;
 	isDirty: boolean;
 	touched: Record<Path<T>, boolean | undefined>;
 	handler: (node: HTMLFormElement) => void;
-	setErrors: (errors: Record<Path<T>, string[]>) => void;
+	setErrors: (errors: Record<Path<T>, string[] | undefined>) => void;
 	setError: (field: Path<T>, error: string | string[]) => void;
 	removeError: (field: Path<T>) => void;
 	setInitialValues: (values: T, options?: { reset?: boolean }) => void;
 	setIsDirty: (dirty: boolean) => void;
 	setIsSubmitting: (submitting: boolean) => void;
+	setIsValid: (valid: boolean) => void;
+	setIsValidating: (validating: boolean) => void;
 	reset: () => void;
 	resetField: (field: Path<T>) => void;
 	submit: (callback?: (data: T) => any) => Promise<void>;
@@ -68,6 +71,7 @@ export default function useForm<T>({
 		data: initialValues,
 		errors: {} as Record<Path<T>, string[] | undefined>,
 		isValid: true,
+		isValidating: false,
 		isSubmitting: false,
 		isDirty: false,
 		touched: {} as Record<Path<T>, boolean | undefined>,
@@ -81,6 +85,12 @@ export default function useForm<T>({
 		},
 		setIsSubmitting: (submitting: boolean = true) => {
 			form.isSubmitting = submitting;
+		},
+		setIsValid: (valid: boolean = true) => {
+			form.isValid = valid;
+		},
+		setIsValidating: (validating: boolean = true) => {
+			form.isValidating = validating;
 		},
 		reset: () => {
 			form.data = structuredClone($state.snapshot(form.initialValues)) as T;
@@ -108,7 +118,7 @@ export default function useForm<T>({
 				});
 			});
 		},
-		setErrors: (errors: Record<Path<T>, string[]>) => {
+		setErrors: (errors: Record<Path<T>, string[] | undefined>) => {
 			form.errors = structuredClone(errors);
 		},
 		setError: (field: Path<T>, error: string | string[]) => {
@@ -119,7 +129,8 @@ export default function useForm<T>({
 		},
 		submit: async (callback?: (data: T) => any) => {
 			if (validator) {
-				if (!validator.validateForm(form)) return;
+				// @ts-ignore
+				if (!(await validator.validateForm(form))) return;
 			}
 			//
 			if (form.isSubmitting) return;
@@ -166,6 +177,7 @@ export default function useForm<T>({
 				}
 				//
 				if (validator) {
+					// @ts-ignore
 					validator.validateField(path as Path<T>, form);
 				}
 			}

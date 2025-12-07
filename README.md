@@ -21,6 +21,7 @@ npm install svelte-simple-form
 ## Guide & Documentation
 
 Check [Svelte Simple Form docs](https://svelte-simple.harryhdt.dev/svelte-simple-form/introduction)
+Check [Svelte Simple Form Examples](https://svelte-simple-form-examples.harryhdt.dev)
 
 ## 🧑‍💻 Example Usage
 

@@ -1,8 +1,8 @@
 {
 	"name": "svelte-simple-form",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"license": "MIT",
-	"homepage": "https://svelte-simple-form.harryhdt.dev",
+	"homepage": "https://svelte-simple.harryhdt.dev/svelte-simple-form/introduction",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/harryhdt/svelte-simple-form.git"
@@ -68,7 +68,6 @@
 		"svelte-check": "^4.3.4",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.46.4",
-		"vite": "^6.3.5",
-		"zod": "^3.25.51"
+		"vite": "^6.3.5"
 	}
 }
