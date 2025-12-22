@@ -25,5 +25,10 @@ vite.config.ts.timestamp-*
 
 # Test
 src/routes/test/**/*
+
+#
+
 note.md
 local-*
+src/lib-old*
+svelte-simple-form*.tgz
