@@ -348,7 +348,75 @@ form.arrayMove('users', 0, 2);
 
 ---
 
-No problem — here is the **corrected documentation section**, now accurately stating that **Standard Schema is one validator option**, and including your **example usage exactly as intended**, with no semantic changes.
+## Validation
+
+Validation in **Svelte Simple Form** is **opt-in** and only available when using `useFormControl`.
+
+Validation is executed through a pluggable `validator` interface, allowing different validation strategies without coupling the core library to a specific schema solution.
+
+---
+
+### How Validation Works
+
+A validator can hook into the form lifecycle at three levels:
+
+- **Field-level** (`validateField`)
+- **Form-level** (`validateForm`)
+
+Validation is triggered based on user interaction and configuration, and its results are reflected in:
+
+- `form.errors`
+- `form.isValid`
+- `form.isValidating`
+
+If no validator is provided, all validation-related behavior is skipped entirely.
+
+---
+
+### Validation Triggers
+
+By default, validation runs on:
+
+```ts
+['change', 'blur', 'submit'];
+```
+
+You can customize this behavior:
+
+```ts
+useFormControl({
+	// ...
+	validateOn: ['submit']
+});
+```
+
+Supported triggers:
+
+- `change` — when a controlled field value changes
+- `blur` — when a controlled field loses focus
+- `submit` — before form submission
+
+---
+
+### Validator Interface
+
+All validators must conform to the following interface:
+
+```ts
+{
+	validateField(
+		field: string,
+		form: FormControlContext,
+		force?: boolean
+	): boolean | Promise<boolean>;
+
+	validateForm(
+		form: FormControlContext
+	): boolean | Promise<boolean>;
+}
+```
+
+This ensures that any validator implementation can be swapped without changing form logic.
 
 ---
 
@@ -363,7 +431,8 @@ For common validation patterns, an official companion package is provided:
 Check [Documentation](https://github.com/harryhdt/svelte-simple-form-validators)
 
 This package includes **multiple validator implementations**, one of which is based on the **Standard Schema** specification.
-This allows integration with schema libraries such as:
+
+This allows seamless integration with schema libraries such as:
 
 - Zod
 - Valibot
@@ -378,6 +447,7 @@ All validators conform to the same `validator` interface and are fully optional.
 The Standard Schema validator adapts compatible schema libraries to the `useFormControl` validation interface.
 
 ```ts
+import { z } from 'zod';
 import { standardSchemaValidator } from '@svelte-simple-form/validators/standard-schema';
 import { useFormControl } from 'svelte-simple-form';
 
@@ -401,7 +471,15 @@ const { form, control } = useFormControl({
 });
 ```
 
---
+Validation errors will be available in:
+
+```ts
+form.errors;
+```
+
+and automatically updated based on user interaction and validation triggers.
+
+---
 
 ## When to Use Which
 
