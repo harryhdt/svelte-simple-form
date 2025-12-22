@@ -1,2 +1,2 @@
-export { default as useForm } from './form.svelte.js';
-export type { FormContext } from './form.svelte.ts';
+export { useForm, useFormControl } from './form.svelte.js';
+export type { FormContext, FormControlContext } from './form.svelte.js';
