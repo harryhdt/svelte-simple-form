@@ -1,7 +1,7 @@
 <script lang="ts">
-	import useForm from '$lib/form.svelte.ts';
+	import { useFormControl } from '$lib/index.ts';
 
-	const { form } = useForm({
+	const { form, control } = useFormControl({
 		initialValues: {
 			name: 'John',
 			email: '',
@@ -23,4 +23,24 @@
 	</a>
 	-
 	<a href="https://github.com/harryhdt/svelte-simple-form" target="_blank">Github</a>
+	<p></p>
+	<br />
+	...
+	<br />
+	<p></p>
+	<div>
+		<form use:form.handler>
+			<p>useForm</p>
+			<input type="text" use:control={'name'} />
+			<button type="submit" disabled={form.isSubmitting}>
+				{form.isSubmitting ? 'Submitting...' : 'Submit'}
+			</button>
+			<button type="button" onclick={() => form.reset()}> Reset </button>
+			<div>
+				<pre>
+					{JSON.stringify(form, null, 2)}
+				</pre>
+			</div>
+		</form>
+	</div>
 </div>
