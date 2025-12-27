@@ -148,8 +148,13 @@ form: {
 	submit(callback?): Promise<void>;
 
 	// data mutation
+	setInitialValues(values: T, props?: { reset?: boolean })
 	setData(values: T): void;
-	setData(field: string, value: unknown): void;
+	setData(field: string, value: unknown, options?: {
+		shouldTouch?: boolean;
+		shouldDirty?: boolean;
+		shouldValidate?: boolean;
+	}): void;
 
 	// validation state
 	setIsValid(isValid: boolean): void;
@@ -169,8 +174,8 @@ form: {
 	removeError(field: string): void;
 
 	// validation
-	validate(): boolean | Promise<boolean>;
-	validateField(field: string): boolean | Promise<boolean>;
+	validate(): Promise<boolean>;
+	validateField(field: string): Promise<boolean>;
 
 	// array helpers
 	arrayAdd(
@@ -291,17 +296,6 @@ Equivalent to:
 
 Options allow you to control how values are interpreted and written back into form state, while still keeping dirty/touched/validation behavior consistent.
 
----
-
-### Key Distinction (Important)
-
-- `bind:value` → **data binding only**
-- `use:control` → **data + behavior + lifecycle**
-
-This distinction is **intentional** and is the core reason `useFormControl` exists.
-
----
-
 ### Supported Inputs
 
 - input
@@ -311,6 +305,81 @@ This distinction is **intentional** and is the core reason `useFormControl` exis
 - radio
 - file
 - contenteditable
+
+---
+
+### Component Usage
+
+When using form controls inside custom components, there are several supported approaches.
+Choose the one that best matches your component design and abstraction level.
+
+#### Manual binding with `form.setData`
+
+```svelte
+<Input defaultValue={form.data.name} oninput={(e) => form.setData('name', e.currentTarget.value)} />
+
+// or
+
+<Component defaultValue={form.data.name} onValueChange={(v) => form.setData('name', v)} />
+```
+
+Using `form.setData` ensures consistent form behavior.
+
+By default, it will:
+
+- mark the field as touched
+- mark the field as dirty
+- trigger validation (if enabled)
+
+You can control this behavior via options:
+
+```ts
+form.setData('name', value, {
+	shouldTouch?: boolean;
+	shouldDirty?: boolean;
+	shouldValidate?: boolean;
+});
+```
+
+This approach works well for:
+
+- headless components
+- design system inputs
+- components that do not expose DOM nodes
+
+#### Using control inside a component
+
+You can continue using control by forwarding it through the component and applying it to the underlying DOM element.
+
+```svelte
+<Input type="email" use={(elm) => control(elm, 'email')} />
+```
+
+**Component implementation** `Input.svelte`
+
+```svelte
+<script lang="ts">
+	import type { HTMLInputAttributes } from 'svelte/elements';
+
+	interface InputProps extends HTMLInputAttributes {
+		use?: (node: HTMLElement) => void;
+	}
+	const { ...props }: InputProps = $props();
+
+	function action(node: HTMLElement) {
+		props.use?.(node);
+	}
+</script>
+
+<input use:action {...props} />
+```
+
+This pattern allows you to:
+
+- keep using control
+- avoid manual event wiring
+- compose multiple DOM behaviors if needed
+- maintain full dirty/touched/validation behavior
 
 ---
 
