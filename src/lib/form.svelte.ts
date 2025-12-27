@@ -105,7 +105,7 @@ export type FormControlContext<T = Record<string, any>> = {
 	reset: () => void;
 	resetField: (path: FlatPaths<T>) => void;
 	submit: (callback?: (data: T) => any) => Promise<void>;
-	setInitialValues: (values: T) => void;
+	setInitialValues: (values: T, props?: { reset?: boolean }) => void;
 	setData: {
 		(values: T): void;
 		<P extends Exclude<Paths<T, ''>, ''>>(field: P, value: _ValueFromParts<T, Split<P>>): void;
@@ -518,14 +518,29 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 	// =====================
 
 	function createSetData<T>() {
-		function setData(values: T): void;
-		function setData<P extends FlatPaths<T>>(field: P, value: ValueFromPath<T, P>): void;
+		function setData(values: T, props?: { shouldValidate?: boolean }): void;
+		function setData<P extends FlatPaths<T>>(
+			field: P,
+			value: ValueFromPath<T, P>,
+			props?: FieldOptions
+		): void;
 
-		function setData(arg1: any, arg2?: any) {
-			if (arg2 === undefined) {
+		function setData(arg1: any, arg2?: any, arg3?: any) {
+			if (typeof arg1 === 'object') {
+				const { shouldValidate = false } = (arg2 || {}) as { shouldValidate?: boolean };
 				form.data = structuredClone($state.snapshot({ ...arg1 }));
+				if (validator && shouldValidate) validator.validateForm(form);
 			} else {
+				const {
+					shouldTouch = true,
+					shouldDirty = true,
+					shouldValidate = true
+				} = (arg3 || {}) as FieldOptions;
+				//
 				setByPath(form.data, arg1, arg2);
+				if (shouldTouch) setByPath(form.touched, arg1, true);
+				if (shouldDirty) updatePathDirty(arg1, arg2);
+				if (validator && shouldValidate) validator.validateField(arg1, form, true);
 			}
 		}
 
@@ -609,6 +624,14 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		el.value = value ?? '';
 	}
 
+	function updatePathDirty(path: NonNullable<Exclude<Paths<T, ''>, ''>>, value: any) {
+		const initial = getValueByPath(form.initialValues, path);
+		const isPathDirty = JSON.stringify(initial) !== JSON.stringify(value);
+
+		if (isPathDirty) form.dirty[path] = true;
+		else delete form.dirty[path];
+	}
+
 	type ControlDataProps = {
 		field: FlatPaths<T>;
 		valueAsNumber?: boolean;
@@ -637,13 +660,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			}
 
 			tick().then(async () => {
-				const initial = getValueByPath(form.initialValues, path);
-				const isPathDirty = JSON.stringify(initial) !== JSON.stringify(value);
-
-				if (isPathDirty) form.dirty[path] = true;
-				else delete form.dirty[path];
-
-				form.isDirty = JSON.stringify(form.data) !== JSON.stringify(form.initialValues);
+				updatePathDirty(path, value);
 
 				await tick();
 
@@ -711,6 +728,13 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			}
 		};
 	};
+
+	$effect(() => {
+		JSON.stringify(form.data);
+		untrack(() => {
+			form.isDirty = JSON.stringify(form.data) !== JSON.stringify(form.initialValues);
+		});
+	});
 
 	$effect(() => {
 		JSON.stringify(form.errors);
