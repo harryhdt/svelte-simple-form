@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useFormControl } from '$lib/index.ts';
+	import Input from './Input.svelte';
 
 	const { form, control } = useFormControl({
 		initialValues: {
@@ -12,7 +13,6 @@
 			console.log(values);
 		}
 	});
-	form.data;
 </script>
 
 <div>
@@ -32,6 +32,12 @@
 		<form use:form.handler>
 			<p>useForm</p>
 			<input type="text" use:control={'name'} />
+			<Input type="email" use={(elm) => control(elm, 'email')} />
+			<!-- <Input
+				type="email"
+				defaultValue={form.data.email}
+				oninput={(e) => form.setData('email', e.currentTarget.value)}
+			/> -->
 			<button type="submit" disabled={form.isSubmitting}>
 				{form.isSubmitting ? 'Submitting...' : 'Submit'}
 			</button>
@@ -44,3 +50,5 @@
 		</form>
 	</div>
 </div>
+
+<!-- setData need auto dirty, etc -->
