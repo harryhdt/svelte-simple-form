@@ -75,6 +75,16 @@ type ArrayPaths<T> = {
 	[P in FlatPaths<T>]: IsArrayLike<ValueFromPath<T, P>> extends true ? P : never;
 }[FlatPaths<T>];
 
+export type Validator<T = any> = {
+	validateField(
+		field: string,
+		form: FormControlContext<T>,
+		force?: boolean
+	): boolean | Promise<boolean>;
+
+	validateForm(form: FormControlContext<T>): boolean | Promise<boolean>;
+};
+
 export type FormContext<T = Record<string, any>> = {
 	initialValues: T;
 	data: T;
@@ -135,14 +145,7 @@ type FormProps<T> = {
 };
 
 type FormControlProps<T> = FormProps<T> & {
-	validator?: {
-		validateField: (
-			field: FlatPaths<T>,
-			form: FormControlContext<T>,
-			force?: boolean
-		) => boolean | Promise<boolean>;
-		validateForm: (form: FormControlContext<T>) => boolean | Promise<boolean>;
-	};
+	validator?: Validator<T>;
 	validateOn?: ('change' | 'blur' | 'submit')[];
 };
 
