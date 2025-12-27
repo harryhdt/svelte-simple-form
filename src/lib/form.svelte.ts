@@ -93,12 +93,39 @@ export type FormControlContext<T = Record<string, any>> = {
 	isSubmitting: boolean;
 	isDirty: boolean;
 	reset: () => void;
+	resetField: (path: FlatPaths<T>) => void;
 	submit: (callback?: (data: T) => any) => Promise<void>;
-	setData: (field: FlatPaths<T>, value: any) => void;
+	setInitialValues: (values: T) => void;
+	setData: {
+		(values: T): void;
+		<P extends Exclude<Paths<T, ''>, ''>>(field: P, value: _ValueFromParts<T, Split<P>>): void;
+	};
+	setIsValid: (isValid: boolean) => void;
+	setIsValidating: (isValidating: boolean) => void;
+	setTouched: (field: FlatPaths<T>, value: boolean) => void;
+	removeTouched: (field: FlatPaths<T>) => void;
+	setDirty: (field: FlatPaths<T>, value: boolean) => void;
+	removeDirty: (field: FlatPaths<T>) => void;
+	arrayAdd: <P extends ArrayPaths<T>>(
+		path: P,
+		value: NonNullable<ValueFromPath<T, P>> extends readonly (infer I)[] ? I : never,
+		idx?: number | undefined,
+		opts?: FieldOptions
+	) => void;
+	arrayRemove: <P extends ArrayPaths<T>>(path: P, index: number, opts?: FieldOptions) => void;
+	arraySwap: <P extends ArrayPaths<T>>(path: P, i: number, j: number, opts?: FieldOptions) => void;
+	arrayMove: <P extends ArrayPaths<T>>(
+		path: P,
+		from: number,
+		to: number,
+		opts?: FieldOptions
+	) => void;
 	setErrors: (errors: Record<string, string[] | undefined>) => void;
 	setError: (field: FlatPaths<T>, errors: string[]) => void;
 	removeError: (field: FlatPaths<T>) => void;
-	setIsValidating: (isValidating: boolean) => void;
+	validateField: (field: FlatPaths<T>) => Promise<boolean>;
+	validate: () => Promise<boolean>;
+	handler: (node: HTMLFormElement) => void;
 };
 
 type FormProps<T> = {
@@ -338,6 +365,13 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			form.isSubmitting = false;
 		},
 
+		setInitialValues: (values: T, props: { reset?: boolean } = {}) => {
+			const { reset = false } = props;
+			const v = structuredClone($state.snapshot({ ...values })) as any;
+			form.initialValues = v;
+			if (reset) form.reset();
+		},
+
 		setData: createSetData<T>(),
 
 		setIsValid(isValid: boolean) {
@@ -458,13 +492,13 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			delete form.errors[field];
 		},
 
-		validateField(field: FlatPaths<T>) {
-			if (validator) return validator.validateField(field, form);
+		async validateField(field: FlatPaths<T>) {
+			if (validator) return await validator.validateField(field, form);
 			return true;
 		},
 
-		validate() {
-			if (validator) return validator.validateForm(form);
+		async validate() {
+			if (validator) return await validator.validateForm(form);
 			return true;
 		},
 
@@ -486,7 +520,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 
 		function setData(arg1: any, arg2?: any) {
 			if (arg2 === undefined) {
-				form.data = structuredClone(arg1);
+				form.data = structuredClone($state.snapshot({ ...arg1 }));
 			} else {
 				setByPath(form.data, arg1, arg2);
 			}
