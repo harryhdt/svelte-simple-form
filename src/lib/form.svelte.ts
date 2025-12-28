@@ -42,12 +42,23 @@ type Paths<T, Prev extends string = ''> = T extends Primitive
 				? Prev | `${Prev}.${number}`
 				: Prev | `${Prev}.${number}` | Paths<U, `${Prev}.${number}`>
 		: T extends object
-			? {
-					[K in keyof T & string]: Prev extends '' ? Paths<T[K], K> : Paths<T[K], `${Prev}.${K}`>;
-				}[keyof T & string]
+			? string extends keyof T
+				? any
+				: number extends keyof T
+					? any
+					: {
+							[K in keyof T & string]: Prev extends ''
+								? Paths<T[K], K>
+								: Paths<T[K], `${Prev}.${K}`>;
+						}[keyof T & string]
 			: Prev;
 
-type FlatPaths<T> = Exclude<Paths<T>, ''>;
+type FlatPaths<T> =
+	Exclude<Paths<T, ''>, ''> extends infer P
+		? [P] extends [never]
+			? string
+			: Extract<P, string>
+		: string;
 
 type IsArrayLike<T> = T extends readonly (infer _I)[]
 	? true
@@ -624,7 +635,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		el.value = value ?? '';
 	}
 
-	function updatePathDirty(path: NonNullable<Exclude<Paths<T, ''>, ''>>, value: any) {
+	function updatePathDirty(path: FlatPaths<T>, value: any) {
 		const initial = getValueByPath(form.initialValues, path);
 		const isPathDirty = JSON.stringify(initial) !== JSON.stringify(value);
 
