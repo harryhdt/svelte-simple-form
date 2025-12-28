@@ -77,7 +77,7 @@ type ArrayPaths<T> = {
 
 export type Validator<T = any> = {
 	validateField(
-		field: string,
+		field: FlatPaths<T>,
 		form: FormControlContext<T>,
 		force?: boolean
 	): boolean | Promise<boolean>;
