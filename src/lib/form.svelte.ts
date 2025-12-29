@@ -123,9 +123,9 @@ export type FormControlContext<T = Record<string, any>> = {
 	};
 	setIsValid: (isValid: boolean) => void;
 	setIsValidating: (isValidating: boolean) => void;
-	setTouched: (field: FlatPaths<T>, value: boolean) => void;
+	setTouched: (field: FlatPaths<T>, value?: boolean) => void;
 	removeTouched: (field: FlatPaths<T>) => void;
-	setDirty: (field: FlatPaths<T>, value: boolean) => void;
+	setDirty: (field: FlatPaths<T>, value?: boolean) => void;
 	removeDirty: (field: FlatPaths<T>) => void;
 	arrayAdd: <P extends ArrayPaths<T>>(
 		path: P,
@@ -158,6 +158,7 @@ type FormProps<T> = {
 type FormControlProps<T> = FormProps<T> & {
 	validator?: Validator<T>;
 	validateOn?: ('change' | 'blur' | 'submit')[];
+	validateAfter?: 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty';
 };
 
 type FieldOptions = {
@@ -326,6 +327,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		initialValues,
 		validator,
 		validateOn = ['change', 'blur', 'submit'],
+		validateAfter = 'touched-and-dirty',
 		onSubmit,
 		onReset
 	} = props;
@@ -396,7 +398,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			form.isValidating = isValidating;
 		},
 
-		setTouched(field: FlatPaths<T>, value: boolean) {
+		setTouched(field: FlatPaths<T>, value = true) {
 			form.touched[field] = value;
 		},
 
@@ -404,7 +406,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			delete form.touched[field];
 		},
 
-		setDirty(field: FlatPaths<T>, value: boolean) {
+		setDirty(field: FlatPaths<T>, value = true) {
 			form.dirty[field] = value;
 		},
 
@@ -425,7 +427,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			setByPath(form.data, path, arrayInsert(arr, index, value));
 			if (shouldTouch) setByPath(form.touched, path, true);
 			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) validator.validateField(path, form, true);
+			if (validator && shouldValidate) safeValidateField(path);
 
 			form.touched = shiftRecordKeys(form.touched, path, (old) => (old >= index ? old + 1 : old));
 			form.dirty = shiftRecordKeys(form.dirty, path, (old) => (old >= index ? old + 1 : old));
@@ -439,7 +441,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			setByPath(form.data, path, arrayRemove(arr, index));
 			if (shouldTouch) setByPath(form.touched, path, true);
 			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) validator.validateField(path, form, true);
+			if (validator && shouldValidate) safeValidateField(path);
 
 			form.touched = shiftRecordKeys(form.touched, path, (old) =>
 				old === index ? null : old > index ? old - 1 : old
@@ -459,7 +461,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			setByPath(form.data, path, arraySwap(arr, i, j));
 			if (shouldTouch) setByPath(form.touched, path, true);
 			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) validator.validateField(path, form, true);
+			if (validator && shouldValidate) safeValidateField(path);
 
 			form.touched = shiftRecordKeys(form.touched, path, (old) =>
 				old === i ? j : old === j ? i : old
@@ -480,7 +482,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			setByPath(form.data, path, arrayMove(arr, from, to));
 			if (shouldTouch) setByPath(form.touched, path, true);
 			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) validator.validateField(path, form, true);
+			if (validator && shouldValidate) safeValidateField(path);
 
 			const shiftFn = (old: number): number => {
 				if (old === from) return to;
@@ -551,7 +553,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 				setByPath(form.data, arg1, arg2);
 				if (shouldTouch) setByPath(form.touched, arg1, true);
 				if (shouldDirty) updatePathDirty(arg1, arg2);
-				if (validator && shouldValidate) validator.validateField(arg1, form, true);
+				if (validator && shouldValidate) safeValidateField(arg1);
 			}
 		}
 
@@ -643,6 +645,24 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		else delete form.dirty[path];
 	}
 
+	function safeValidateField(path: FlatPaths<T>, force = false) {
+		if (!validator) return;
+
+		const rules = {
+			dirty: () => form.dirty[path],
+			touched: () => form.touched[path],
+			'touched-or-dirty': () => form.touched[path] || form.dirty[path],
+			'touched-and-dirty': () => form.touched[path] && form.dirty[path]
+		};
+
+		const rule = rules[validateAfter];
+		const shouldValidate = force || (rule && rule());
+
+		if (shouldValidate) {
+			validator.validateField(path, form, true);
+		}
+	}
+
 	type ControlDataProps = {
 		field: FlatPaths<T>;
 		valueAsNumber?: boolean;
@@ -687,7 +707,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 				await tick();
 
 				if (validator && validateOn.includes('change')) {
-					validator.validateField(path, form);
+					safeValidateField(path);
 				}
 			});
 		};
@@ -696,7 +716,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			form.touched[path] = true;
 			tick().then(() => {
 				if (validator && validateOn.includes('blur')) {
-					validator.validateField(path, form);
+					safeValidateField(path);
 				}
 			});
 		};
