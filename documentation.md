@@ -114,7 +114,8 @@ const { form, control } = useFormControl({
 		users: [{ name: '' }]
 	},
 	validator, // optional
-	// validateOn: ['change', 'blur', 'submit'] // optional
+	// validateOn: ['change', 'blur', 'submit'], // => optional
+	// validateAfter: 'touched-and-dirty', // 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty' => optional
 	onSubmit: async (data) => {
 		console.log(data);
 	}
@@ -161,11 +162,11 @@ form: {
 	setIsValidating(isValidating: boolean): void;
 
 	// touched state
-	setTouched(field: string, value: boolean): void;
+	setTouched(field: string, value?: boolean): void;
 	removeTouched(field: string): void;
 
 	// dirty state
-	setDirty(field: string, value: boolean): void;
+	setDirty(field: string, value?: boolean): void;
 	removeDirty(field: string): void;
 
 	// error handling
@@ -316,11 +317,11 @@ Choose the one that best matches your component design and abstraction level.
 #### Manual binding with `form.setData`
 
 ```svelte
-<Input defaultValue={form.data.name} oninput={(e) => form.setData('name', e.currentTarget.value)} />
+<Input value={form.data.name} onchange={(e) => form.setData('name', e.currentTarget.value)} />
 
 // or
 
-<Component defaultValue={form.data.name} onValueChange={(v) => form.setData('name', v)} />
+<Component value={form.data.name} onValueChange={(v) => form.setData('name', v)} />
 ```
 
 Using `form.setData` ensures consistent form behavior.
