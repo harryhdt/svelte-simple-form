@@ -706,6 +706,10 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 
 				await tick();
 
+				if (getValueByPath(form.data, path) === getValueByPath(form.initialValues, path)) {
+					delete form.errors[path];
+				}
+
 				if (validator && validateOn.includes('change')) {
 					safeValidateField(path);
 				}
