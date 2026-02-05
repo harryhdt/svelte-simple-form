@@ -680,7 +680,17 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 
 		const handleOnInput = async () => {
 			let value = readValue(node, path);
-			if (valueAsNumber) value = Number(value);
+			if (valueAsNumber) {
+				const str = String(value).trim();
+				if (str === '' || str === '-') {
+					value = str;
+				} else if (/^-?\d+$/.test(str)) {
+					value = Number(str);
+				} else {
+					value = getValueByPath(form.data, path);
+				}
+				writeValue(node, value);
+			}
 
 			if (setValueAs) {
 				setValueAs(value);
