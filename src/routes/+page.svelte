@@ -32,7 +32,16 @@
 		<form use:form.handler>
 			<p>useForm</p>
 			<input type="text" use:control={'name'} />
-			<Input type="email" use={(elm) => control(elm, 'email')} />
+			<Input type="email" placeholder="email" use={(elm) => control(elm, 'email')} />
+			<Input
+				type="text"
+				placeholder="age"
+				use={(elm) =>
+					control(elm, {
+						field: 'age',
+						valueAsNumber: true
+					})}
+			/>
 			<!-- <Input
 				type="email"
 				defaultValue={form.data.email}
