@@ -775,9 +775,9 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 	};
 
 	$effect(() => {
-		JSON.stringify(form.data);
+		JSON.stringify(form.dirty);
 		untrack(() => {
-			form.isDirty = JSON.stringify(form.data) !== JSON.stringify(form.initialValues);
+			form.isDirty = Object.values(form.dirty).some((v) => v === true);
 		});
 	});
 
