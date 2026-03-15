@@ -142,7 +142,7 @@ export type FormControlContext<T = Record<string, any>> = {
 		opts?: FieldOptions
 	) => void;
 	setErrors: (errors: Record<string, string[] | undefined>) => void;
-	setError: (field: FlatPaths<T>, errors: string[]) => void;
+	setError: (field: FlatPaths<T>, error: string | string[]) => void;
 	removeError: (field: FlatPaths<T>) => void;
 	validateField: (field: FlatPaths<T>) => Promise<boolean>;
 	validate: () => Promise<boolean>;
