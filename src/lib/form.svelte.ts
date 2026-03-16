@@ -90,7 +90,12 @@ export type Validator<T = any> = {
 	validateField(
 		field: FlatPaths<T>,
 		form: FormControlContext<T>,
-		force?: boolean
+		force?: boolean,
+		config?: {
+			validateOn?: string[];
+			validateAfter?: string;
+			validateDebounce?: number;
+		}
 	): boolean | Promise<boolean>;
 
 	validateForm(form: FormControlContext<T>): boolean | Promise<boolean>;
@@ -336,10 +341,11 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 
 	// Track reset generation to prevent pending validations from overwriting reset state
 	let resetGeneration = $state(0);
-	const fieldValidationGeneration: Record<string, number> = {};
 
 	// Track debounce timers to prevent API hammering on rapid keystrokes
 	const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+
+	let activeRequests = $state(0);
 
 	const form = $state({
 		initialValues,
@@ -520,8 +526,14 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			delete form.errors[field];
 		},
 
-		async validateField(field: FlatPaths<T>) {
-			if (validator) return await validator.validateField(field, form);
+		async validateField(field: FlatPaths<T>, force = false) {
+			if (validator) {
+				return await validator.validateField(field, form, force, {
+					validateOn,
+					validateAfter,
+					validateDebounce
+				});
+			}
 			return true;
 		},
 
@@ -671,7 +683,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		const shouldValidate = force || (rule && rule());
 
 		if (shouldValidate) {
-			// Fix #10: Debounce validation if triggered by change event
+			// Fix: Debounce validation if triggered by change event
 			const isChangeEvent = validateOn.includes('change') && !force;
 			const shouldDebounce = validateDebounce > 0 && isChangeEvent;
 
@@ -696,26 +708,21 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 	function executeValidation(path: FlatPaths<T>) {
 		if (!validator) return;
 
-		// Capture current reset generation before validation starts
 		const currentResetGen = resetGeneration;
-		fieldValidationGeneration[path] = currentResetGen;
 
-		// Mark as validating
+		activeRequests++;
 		form.isValidating = true;
 
-		// Call validator and check if reset happened during validation
-		Promise.resolve(validator.validateField(path, form, true)).then(() => {
-			// Only apply validation results if reset hasn't happened
-			if (fieldValidationGeneration[path] === currentResetGen) {
-				// Validation result is still valid, keep it
-				delete fieldValidationGeneration[path];
-			} else {
-				// Reset happened while validation was pending, discard validation errors
-				delete form.errors[path];
-				delete fieldValidationGeneration[path];
+		Promise.resolve(
+			validator.validateField(path, form, true, { validateOn, validateAfter, validateDebounce })
+		).then(() => {
+			activeRequests = Math.max(0, activeRequests - 1);
+
+			if (resetGeneration !== currentResetGen) {
+				form.errors = {} as any;
 			}
 
-			form.isValidating = Object.keys(fieldValidationGeneration).length > 0;
+			form.isValidating = activeRequests > 0;
 		});
 	}
 
