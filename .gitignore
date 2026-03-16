@@ -32,3 +32,5 @@ note.md
 local-*
 src/lib-old*
 svelte-simple-form*.tgz
+
+.github
