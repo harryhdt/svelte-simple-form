@@ -159,6 +159,7 @@ type FormControlProps<T> = FormProps<T> & {
 	validator?: Validator<T>;
 	validateOn?: ('change' | 'blur' | 'submit')[];
 	validateAfter?: 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty';
+	validateDebounce?: number; // Debounce validateOn: 'change' by ms (prevents API hammering)
 };
 
 type FieldOptions = {
@@ -328,9 +329,17 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		validator,
 		validateOn = ['change', 'blur', 'submit'],
 		validateAfter = 'touched-and-dirty',
+		validateDebounce = 100,
 		onSubmit,
 		onReset
 	} = props;
+
+	// Track reset generation to prevent pending validations from overwriting reset state
+	let resetGeneration = $state(0);
+	const fieldValidationGeneration: Record<string, number> = {};
+
+	// Track debounce timers to prevent API hammering on rapid keystrokes
+	const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
 	const form = $state({
 		initialValues,
@@ -347,6 +356,9 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 
 		reset() {
 			(async () => {
+				// Increment resetGeneration to cancel pending validations
+				resetGeneration++;
+
 				form.data = structuredClone($state.snapshot(form.initialValues)) as T;
 				await tick();
 				form.errors = {} as Record<FlatPaths<T>, string[] | undefined>;
@@ -659,8 +671,52 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		const shouldValidate = force || (rule && rule());
 
 		if (shouldValidate) {
-			validator.validateField(path, form, true);
+			// Fix #10: Debounce validation if triggered by change event
+			const isChangeEvent = validateOn.includes('change') && !force;
+			const shouldDebounce = validateDebounce > 0 && isChangeEvent;
+
+			if (shouldDebounce) {
+				// Clear existing debounce timer for this field
+				if (debounceTimers[path]) {
+					clearTimeout(debounceTimers[path]);
+				}
+
+				// Set new debounce timer
+				debounceTimers[path] = setTimeout(() => {
+					executeValidation(path);
+					delete debounceTimers[path];
+				}, validateDebounce);
+			} else {
+				// Validate immediately (no debounce)
+				executeValidation(path);
+			}
 		}
+	}
+
+	function executeValidation(path: FlatPaths<T>) {
+		if (!validator) return;
+
+		// Capture current reset generation before validation starts
+		const currentResetGen = resetGeneration;
+		fieldValidationGeneration[path] = currentResetGen;
+
+		// Mark as validating
+		form.isValidating = true;
+
+		// Call validator and check if reset happened during validation
+		Promise.resolve(validator.validateField(path, form, true)).then(() => {
+			// Only apply validation results if reset hasn't happened
+			if (fieldValidationGeneration[path] === currentResetGen) {
+				// Validation result is still valid, keep it
+				delete fieldValidationGeneration[path];
+			} else {
+				// Reset happened while validation was pending, discard validation errors
+				delete form.errors[path];
+				delete fieldValidationGeneration[path];
+			}
+
+			form.isValidating = Object.keys(fieldValidationGeneration).length > 0;
+		});
 	}
 
 	type ControlDataProps = {
