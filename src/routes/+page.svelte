@@ -53,7 +53,7 @@
 			<button type="button" onclick={() => form.reset()}> Reset </button>
 			<div>
 				<pre>
-					{JSON.stringify(form, null, 2)}
+{JSON.stringify(form, null, 2)}
 				</pre>
 			</div>
 		</form>
