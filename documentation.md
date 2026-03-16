@@ -116,6 +116,7 @@ const { form, control } = useFormControl({
 	validator, // optional
 	// validateOn: ['change', 'blur', 'submit'], // => optional
 	// validateAfter: 'touched-and-dirty', // 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty' => optional
+	// validateDebounce: 100, // => optional
 	onSubmit: async (data) => {
 		console.log(data);
 	}
@@ -477,7 +478,12 @@ All validators must conform to the following interface:
 	validateField(
 		field: string,
 		form: FormControlContext,
-		force?: boolean
+		force?: boolean,
+		config?: {
+			validateOn?: string[];
+			validateAfter?: string;
+			validateDebounce?: number;
+		}
 	): boolean | Promise<boolean>;
 
 	validateForm(
@@ -486,7 +492,18 @@ All validators must conform to the following interface:
 }
 ```
 
+Notes:
+
+- `force` lets the form trigger validation even when `validateAfter` rules would normally skip it (e.g., during submit).
+- `config` mirrors the form-level validation options so validators can make debounce/trigger-aware choices. It is optional for backward compatibility but recommended for new validators.
+
 This ensures that any validator implementation can be swapped without changing form logic.
+
+### Validation concurrency & debounce (v0.4.8)
+
+- **Debounced change validation**: `validateDebounce` (default `100ms`) throttles change-triggered validation to avoid API hammering. Set to `0` to disable.
+- **Reset-safe validations**: In-flight validations started before a `reset()` are discarded via a generation counter; errors are cleared after reset.
+- **Accurate `isValidating`**: The form tracks the count of active validation requests and keeps `isValidating` `true` until all complete.
 
 ---
 
