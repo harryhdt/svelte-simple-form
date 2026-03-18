@@ -438,28 +438,27 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			idx: number | undefined = undefined,
 			opts: FieldOptions = {}
 		) {
-			const { shouldTouch = true, shouldDirty = true, shouldValidate = false } = opts;
-			const arr = getValueByPath(form.data, path) as any[];
+			const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
+			const arr = (getValueByPath(form.data, path) || []) as any[];
 			const index = idx !== undefined ? idx : arr.length;
 
 			setByPath(form.data, path, arrayInsert(arr, index, value));
-			if (shouldTouch) setByPath(form.touched, path, true);
-			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) safeValidateField(path);
 
 			form.touched = shiftRecordKeys(form.touched, path, (old) => (old >= index ? old + 1 : old));
 			form.dirty = shiftRecordKeys(form.dirty, path, (old) => (old >= index ? old + 1 : old));
 			form.errors = shiftRecordKeys(form.errors, path, (old) => (old >= index ? old + 1 : old));
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+
+			if (validator && shouldValidate) safeValidateField(path);
 		},
 
 		arrayRemove<P extends ArrayPaths<T>>(path: P, index: number, opts: FieldOptions = {}) {
-			const { shouldTouch = true, shouldDirty = true, shouldValidate = false } = opts;
+			const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
 			const arr = getValueByPath(form.data, path) as any[];
 
 			setByPath(form.data, path, arrayRemove(arr, index));
-			if (shouldTouch) setByPath(form.touched, path, true);
-			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) safeValidateField(path);
 
 			form.touched = shiftRecordKeys(form.touched, path, (old) =>
 				old === index ? null : old > index ? old - 1 : old
@@ -470,16 +469,18 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			form.errors = shiftRecordKeys(form.errors, path, (old) =>
 				old === index ? null : old > index ? old - 1 : old
 			);
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+
+			if (validator && shouldValidate) safeValidateField(path);
 		},
 
 		arraySwap<P extends ArrayPaths<T>>(path: P, i: number, j: number, opts: FieldOptions = {}) {
-			const { shouldTouch = true, shouldDirty = true, shouldValidate = false } = opts;
+			const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
 			const arr = getValueByPath(form.data, path) as any[];
 
 			setByPath(form.data, path, arraySwap(arr, i, j));
-			if (shouldTouch) setByPath(form.touched, path, true);
-			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) safeValidateField(path);
 
 			form.touched = shiftRecordKeys(form.touched, path, (old) =>
 				old === i ? j : old === j ? i : old
@@ -490,17 +491,19 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			form.errors = shiftRecordKeys(form.errors, path, (old) =>
 				old === i ? j : old === j ? i : old
 			);
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+
+			if (validator && shouldValidate) safeValidateField(path);
 		},
 
 		arrayMove<P extends ArrayPaths<T>>(path: P, from: number, to: number, opts: FieldOptions = {}) {
 			if (from === to) return;
-			const { shouldTouch = true, shouldDirty = true, shouldValidate = false } = opts;
+			const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
 			const arr = getValueByPath(form.data, path) as any[];
 
 			setByPath(form.data, path, arrayMove(arr, from, to));
-			if (shouldTouch) setByPath(form.touched, path, true);
-			if (shouldDirty) setByPath(form.dirty, path, true);
-			if (validator && shouldValidate) safeValidateField(path);
 
 			const shiftFn = (old: number): number => {
 				if (old === from) return to;
@@ -512,6 +515,11 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			form.touched = shiftRecordKeys(form.touched, path, shiftFn);
 			form.dirty = shiftRecordKeys(form.dirty, path, shiftFn);
 			form.errors = shiftRecordKeys(form.errors, path, shiftFn);
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+
+			if (validator && shouldValidate) safeValidateField(path);
 		},
 
 		setErrors(errors: Record<FlatPaths<T>, string[] | undefined>) {
