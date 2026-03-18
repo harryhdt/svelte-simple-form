@@ -2,6 +2,35 @@
 
 All notable changes to this project will documented in this file.
 
+## [0.4.9] - 2026-03-18
+### ✨ Features
+
+- Added `arrayRemoveBy` and `arrayUpdateBy` helpers to remove or update array items via a predicate. These mirror existing array helpers (`arrayAdd`, `arrayRemove`, `arraySwap`, `arrayMove`) but operate by predicate for convenience.
+
+### 🐛 Bug Fixes
+
+- No bug fixes in this release.
+
+### ⚠️ Breaking Changes
+
+- Array manipulation helpers default `shouldValidate` changed from `false` to `true` when a validator is configured. Array operations (e.g. `arrayAdd`, `arrayRemove`, `arrayMove`, `arraySwap`, `arrayRemoveBy`, `arrayUpdateBy`) will now trigger validation by default. If you relied on the old behavior, pass `FieldOptions` with `shouldValidate: false` to opt out.
+
+### ♻️ Code Quality
+
+- Adjusted internal array helper implementations to centralize touch/dirty updates and validation triggering.
+
+### 📚 Documentation
+
+- Documented `arrayRemoveBy` and `arrayUpdateBy` in the Array Helpers section and clarified `FieldOptions` defaults for array operations.
+
+### 🔄 Internal Changes
+
+- Refactored array helper implementations to ensure touched/dirty state is set consistently during array operations.
+
+### 🎯 Impact
+
+- Improves ergonomics for array field operations and ensures array mutations participate in validation and state tracking by default.
+
 ## [0.4.8] - 2026-03-17
 
 ### 🐛 Bug Fixes

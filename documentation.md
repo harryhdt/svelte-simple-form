@@ -33,15 +33,42 @@ It does not introduce schemas, runtime models, or implicit abstractions.
 
 with npm:
 
-```bash
+````bash
 npm install svelte-simple-form
+
+### Remove By Predicate
+
+Use `arrayRemoveBy` to remove the first item matching a predicate. This is helpful when you don't know the index but can identify the item by a field.
+
+```ts
+form.arrayRemoveBy('users', (user) => user.id === targetId);
+````
+
+### Update By Predicate
+
+Use `arrayUpdateBy` to update the first item matching a predicate. You can pass a new value or an updater function.
+
+```ts
+// Replace with a new object
+form.arrayUpdateBy('users', (u) => u.id === targetId, { ...updatedUser });
+
+// Or use an updater function
+form.arrayUpdateBy(
+	'users',
+	(u) => u.id === targetId,
+	(prev) => ({ ...prev, name: 'New' })
+);
 ```
+
+Both `arrayRemoveBy` and `arrayUpdateBy` accept the same `FieldOptions` as other array helpers. Note: array helpers now default `shouldValidate` to `true` (when a validator is configured), so array mutations will trigger validation by default.
+
+````
 
 or with pnpm:
 
 ```bash
 pnpm add svelte-simple-form
-```
+````
 
 or with yarn:
 
