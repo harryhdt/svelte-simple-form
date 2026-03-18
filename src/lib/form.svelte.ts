@@ -86,6 +86,9 @@ type ArrayPaths<T> = {
 	[P in FlatPaths<T>]: IsArrayLike<ValueFromPath<T, P>> extends true ? P : never;
 }[FlatPaths<T>];
 
+type ArrayItem<T, P extends FlatPaths<T>> =
+	NonNullable<ValueFromPath<T, P>> extends readonly (infer I)[] ? I : never;
+
 export type Validator<T = any> = {
 	validateField(
 		field: FlatPaths<T>,
@@ -145,6 +148,17 @@ export type FormControlContext<T = Record<string, any>> = {
 		from: number,
 		to: number,
 		opts?: FieldOptions
+	) => void;
+	arrayRemoveBy: <P extends ArrayPaths<T>>(
+		path: P,
+		predicate: (item: ArrayItem<T, P>) => boolean,
+		opts?: FieldOptions
+	) => void;
+	arrayUpdateBy: <P extends ArrayPaths<T>>(
+		path: P,
+		predicate: (item: ArrayItem<T, P>) => boolean,
+		value: ArrayItem<T, P> | ((prev: ArrayItem<T, P>) => ArrayItem<T, P>),
+		opts: FieldOptions
 	) => void;
 	setErrors: (errors: Record<string, string[] | undefined>) => void;
 	setError: (field: FlatPaths<T>, error: string | string[]) => void;
@@ -520,6 +534,50 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			if (shouldDirty) setByPath(form.dirty, path, true);
 
 			if (validator && shouldValidate) safeValidateField(path);
+		},
+
+		arrayRemoveBy<P extends ArrayPaths<T>>(
+			path: P,
+			predicate: (item: ArrayItem<T, P>) => boolean,
+			opts: FieldOptions = {}
+		) {
+			const arr = (getValueByPath(form.data, path) || []) as any[];
+			const index = arr.findIndex(predicate);
+			if (index !== -1) {
+				this.arrayRemove(path, index, opts);
+			} else {
+				console.warn(`arrayRemoveBy: No item found matching predicate at path "${path}"`);
+			}
+		},
+
+		arrayUpdateBy<P extends ArrayPaths<T>>(
+			path: P,
+			predicate: (item: ArrayItem<T, P>) => boolean,
+			value: ArrayItem<T, P> | ((prev: ArrayItem<T, P>) => ArrayItem<T, P>),
+			opts: FieldOptions = {}
+		) {
+			const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
+			const arr = (getValueByPath(form.data, path) || []) as any[];
+			const index = arr.findIndex(predicate);
+
+			if (index !== -1) {
+				const currentItem = arr[index];
+
+				const newValue = typeof value === 'function' ? (value as Function)(currentItem) : value;
+
+				const newArr = arr.slice();
+				newArr[index] = newValue;
+
+				setByPath(form.data, path, newArr);
+
+				const itemPath = `${path}.${index}` as FlatPaths<T>;
+				if (shouldTouch) form.touched[itemPath] = true;
+				if (shouldDirty) updatePathDirty(itemPath, newValue);
+
+				if (validator && shouldValidate) safeValidateField(path);
+			} else {
+				console.warn(`arrayUpdateBy: No item found matching predicate at path "${path}"`);
+			}
 		},
 
 		setErrors(errors: Record<FlatPaths<T>, string[] | undefined>) {
