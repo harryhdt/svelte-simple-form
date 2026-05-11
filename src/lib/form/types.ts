@@ -34,7 +34,7 @@ export type Primitive =
 
 export type Paths<T, Prev extends string = ''> = T extends Primitive
 	? Prev
-	: T extends (infer U)[]
+	: T extends readonly (infer U)[] | (infer U)[]
 		? [U] extends [never]
 			? Prev | `${Prev}.${number}`
 			: U extends Primitive
@@ -90,6 +90,12 @@ export type ArrayPaths<T> = {
 export type ArrayItem<T, P extends FlatPaths<T>> =
 	NonNullable<ValueFromPath<T, P>> extends readonly (infer I)[] ? I : never;
 
+export type ControlDataProps = {
+	field?: string;
+	valueAsNumber?: boolean;
+	setValueAs?: (v: any) => Promise<void> | void;
+};
+
 export type Validator<T = any> = {
 	validateField(
 		field: FlatPaths<T>,
@@ -127,8 +133,12 @@ export type FormControlContext<T = Record<string, any>> = {
 	submit: (callback?: (data: T) => any) => Promise<void>;
 	setInitialValues: (values: T, props?: { reset?: boolean }) => void;
 	setData: {
-		(values: T): void;
-		<P extends Exclude<Paths<T, ''>, ''>>(field: P, value: _ValueFromParts<T, Split<P>>): void;
+		(values: T, props?: { shouldValidate?: boolean }): void;
+		<P extends FlatPaths<T>>(
+			field: P,
+			value: ValueFromPath<T, P>,
+			props?: FieldOptions
+		): void;
 	};
 	setIsValid: (isValid: boolean) => void;
 	setIsValidating: (isValidating: boolean) => void;
@@ -136,6 +146,13 @@ export type FormControlContext<T = Record<string, any>> = {
 	removeTouched: (field: FlatPaths<T>) => void;
 	setDirty: (field: FlatPaths<T>, value?: boolean) => void;
 	removeDirty: (field: FlatPaths<T>) => void;
+	control: <P extends FlatPaths<T>>(
+		path: P,
+		props?: ControlDataProps
+	) => (node: HTMLElement & Record<string, any>) => {
+		update?: () => void;
+		destroy?: () => void;
+	};
 	arrayAdd: <P extends ArrayPaths<T>>(
 		path: P,
 		value: NonNullable<ValueFromPath<T, P>> extends readonly (infer I)[] ? I : never,
@@ -159,14 +176,16 @@ export type FormControlContext<T = Record<string, any>> = {
 		path: P,
 		predicate: (item: ArrayItem<T, P>) => boolean,
 		value: ArrayItem<T, P> | ((prev: ArrayItem<T, P>) => ArrayItem<T, P>),
-		opts: FieldOptions
+		opts?: FieldOptions
 	) => void;
 	setErrors: (errors: Record<string, string[] | undefined>) => void;
 	setError: (field: FlatPaths<T>, error: string | string[]) => void;
 	removeError: (field: FlatPaths<T>) => void;
 	validateField: (field: FlatPaths<T>) => Promise<boolean>;
 	validate: () => Promise<boolean>;
-	handler: (node: HTMLFormElement) => void;
+	handler: (node: HTMLFormElement) => {
+		destroy?: () => void;
+	};
 };
 
 export type FormProps<T> = {
