@@ -1,5 +1,4 @@
-// Extracted validation helpers from form.svelte.ts
-// Real split-engine preparation phase
+// Simplified validation helpers aligned closer to form.svelte.ts
 
 import type { Validator } from './types';
 
@@ -45,23 +44,24 @@ export function safeValidateField<T>(
 	const rule = rules[validateAfter];
 	const shouldValidate = force || (rule && rule());
 
-	if (shouldValidate) {
-		const isChangeEvent = validateOn.includes('change') && !force;
-		const shouldDebounce = validateDebounce > 0 && isChangeEvent;
+	if (!shouldValidate) return;
 
-		if (shouldDebounce) {
-			if (debounceTimers[path]) {
-				clearTimeout(debounceTimers[path]);
-			}
+	const shouldDebounce = validateOn.includes('change') && !force && validateDebounce > 0;
 
-			debounceTimers[path] = setTimeout(() => {
-				executeValidation(ctx, path);
-				delete debounceTimers[path];
-			}, validateDebounce);
-		} else {
-			executeValidation(ctx, path);
+	if (shouldDebounce) {
+		if (debounceTimers[path]) {
+			clearTimeout(debounceTimers[path]);
 		}
+
+		debounceTimers[path] = setTimeout(() => {
+			executeValidation(ctx, path);
+			delete debounceTimers[path];
+		}, validateDebounce);
+
+		return;
 	}
+
+	executeValidation(ctx, path);
 }
 
 export function executeValidation<T>(ctx: ValidationContext<T>, path: string) {
@@ -89,7 +89,7 @@ export function executeValidation<T>(ctx: ValidationContext<T>, path: string) {
 			validateAfter,
 			validateDebounce
 		})
-	).then(() => {
+	).finally(() => {
 		activeRequests.value = Math.max(0, activeRequests.value - 1);
 
 		if (resetGeneration.value !== currentResetGen) {
