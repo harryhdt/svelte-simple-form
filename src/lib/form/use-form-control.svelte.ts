@@ -1,7 +1,20 @@
+import {
+	arrayInsert,
+	arrayMove,
+	arrayRemove,
+	arraySwap,
+	shiftRecordKeys
+} from './array';
 import { getValueByPath, setByPath } from './path';
 import { updateFieldDirty, setTouched } from './state';
 import { safeValidateField } from './validation';
-import type { FormControlContext, Validator } from './types';
+import type {
+	ArrayItem,
+	ArrayPaths,
+	FieldOptions,
+	FormControlContext,
+	Validator
+} from './types';
 
 export type UseFormControlOptions<T> = {
 	initialValues: T;
@@ -110,6 +123,153 @@ export function useFormControl<T extends Record<string, any>>(
 		form.isDirty = Object.keys(form.dirty).length > 0;
 	}
 
+	function arrayAdd<P extends ArrayPaths<T>>(
+		path: P,
+		value: ArrayItem<T, P>,
+		idx?: number,
+		opts: FieldOptions = {}
+	) {
+		const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
+
+		const current = (getValueByPath(form.data, path) || []) as ArrayItem<T, P>[];
+		const index = idx ?? current.length;
+
+		setByPath(form.data, path, arrayInsert(current, index, value));
+
+		form.touched = shiftRecordKeys(form.touched, path, (old) =>
+			old >= index ? old + 1 : old
+		);
+
+		form.dirty = shiftRecordKeys(form.dirty, path, (old) =>
+			old >= index ? old + 1 : old
+		);
+
+		form.errors = shiftRecordKeys(form.errors, path, (old) =>
+			old >= index ? old + 1 : old
+		);
+
+		if (shouldTouch) {
+			setTouched(form.touched, path, true);
+		}
+
+		if (shouldDirty) {
+			updateFieldDirty(form, path);
+		}
+
+		if (shouldValidate && validateOn.includes('change')) {
+			validateField(path);
+		}
+	}
+
+	function arrayRemove<P extends ArrayPaths<T>>(
+		path: P,
+		index: number,
+		opts: FieldOptions = {}
+	) {
+		const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
+
+		const current = (getValueByPath(form.data, path) || []) as ArrayItem<T, P>[];
+
+		setByPath(form.data, path, arrayRemove(current, index));
+
+		form.touched = shiftRecordKeys(form.touched, path, (old) =>
+			old === index ? null : old > index ? old - 1 : old
+		);
+
+		form.dirty = shiftRecordKeys(form.dirty, path, (old) =>
+			old === index ? null : old > index ? old - 1 : old
+		);
+
+		form.errors = shiftRecordKeys(form.errors, path, (old) =>
+			old === index ? null : old > index ? old - 1 : old
+		);
+
+		if (shouldTouch) {
+			setTouched(form.touched, path, true);
+		}
+
+		if (shouldDirty) {
+			updateFieldDirty(form, path);
+		}
+
+		if (shouldValidate && validateOn.includes('change')) {
+			validateField(path);
+		}
+	}
+
+	function arraySwap<P extends ArrayPaths<T>>(
+		path: P,
+		i: number,
+		j: number,
+		opts: FieldOptions = {}
+	) {
+		const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
+
+		const current = (getValueByPath(form.data, path) || []) as ArrayItem<T, P>[];
+
+		setByPath(form.data, path, arraySwap(current, i, j));
+
+		form.touched = shiftRecordKeys(form.touched, path, (old) =>
+			old === i ? j : old === j ? i : old
+		);
+
+		form.dirty = shiftRecordKeys(form.dirty, path, (old) =>
+			old === i ? j : old === j ? i : old
+		);
+
+		form.errors = shiftRecordKeys(form.errors, path, (old) =>
+			old === i ? j : old === j ? i : old
+		);
+
+		if (shouldTouch) {
+			setTouched(form.touched, path, true);
+		}
+
+		if (shouldDirty) {
+			updateFieldDirty(form, path);
+		}
+
+		if (shouldValidate && validateOn.includes('change')) {
+			validateField(path);
+		}
+	}
+
+	function arrayMoveItem<P extends ArrayPaths<T>>(
+		path: P,
+		from: number,
+		to: number,
+		opts: FieldOptions = {}
+	) {
+		const { shouldTouch = true, shouldDirty = true, shouldValidate = true } = opts;
+
+		const current = (getValueByPath(form.data, path) || []) as ArrayItem<T, P>[];
+
+		setByPath(form.data, path, arrayMove(current, from, to));
+
+		const shiftFn = (old: number): number => {
+			if (old === from) return to;
+			if (from < to && old > from && old <= to) return old - 1;
+			if (from > to && old >= to && old < from) return old + 1;
+			return old;
+		};
+
+		form.touched = shiftRecordKeys(form.touched, path, shiftFn);
+		form.dirty = shiftRecordKeys(form.dirty, path, shiftFn);
+		form.errors = shiftRecordKeys(form.errors, path, shiftFn);
+
+		if (shouldTouch) {
+			setTouched(form.touched, path, true);
+		}
+
+		if (shouldDirty) {
+			updateFieldDirty(form, path);
+		}
+
+		if (shouldValidate && validateOn.includes('change')) {
+			validateField(path);
+		}
+	}
+
 	return {
 		form,
 		getData,
@@ -117,6 +277,10 @@ export function useFormControl<T extends Record<string, any>>(
 		reset,
 		resetField,
 		validate,
-		validateField
+		validateField,
+		arrayAdd,
+		arrayRemove,
+		arraySwap,
+		arrayMove: arrayMoveItem
 	} as FormControlContext<T>;
 }
