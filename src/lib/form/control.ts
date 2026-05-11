@@ -1,9 +1,11 @@
 // Extracted control orchestration layer from form.svelte.ts
 // Phase 7D-A - control foundation
 
+import { getValueByPath } from './path';
 import { readValue, writeValue } from './dom';
 import { safeValidateField } from './validation';
 
+import type { ControlDataProps } from './dom';
 import type { FlatPaths } from './types';
 
 export type CreateControlProps<T> = {
@@ -12,22 +14,21 @@ export type CreateControlProps<T> = {
 };
 
 export function createControl<T>({ form, validationContext }: CreateControlProps<T>) {
-	return function control(path: FlatPaths<T>) {
+	return function control(path: FlatPaths<T>, props?: ControlDataProps) {
 		return function (node: HTMLElement & Record<string, any>) {
-			let mounted = true;
+			const value = getValueByPath(form.data, path);
+			writeValue(node, value);
 
-			const syncFromForm = () => {
-				if (!mounted) return;
+			const updateValue = async () => {
+				let value = readValue(node, form.data, path);
 
-				const value = form.data
-					? path.split('.').reduce((acc: any, key: string) => acc?.[key], form.data)
-					: undefined;
+				if (props?.valueAsNumber) {
+					value = value === '' ? undefined : Number(value);
+				}
 
-				writeValue(node, value);
-			};
-
-			const syncToForm = () => {
-				const value = readValue(node, form.data, path);
+				if (props?.setValueAs) {
+					await props.setValueAs(value);
+				}
 
 				form.setData(path as any, value, {
 					shouldTouch: true,
@@ -37,11 +38,11 @@ export function createControl<T>({ form, validationContext }: CreateControlProps
 			};
 
 			const handleInput = () => {
-				syncToForm();
+				updateValue();
 			};
 
 			const handleChange = () => {
-				syncToForm();
+				updateValue();
 			};
 
 			const handleBlur = () => {
@@ -56,20 +57,13 @@ export function createControl<T>({ form, validationContext }: CreateControlProps
 			node.addEventListener('change', handleChange);
 			node.addEventListener('blur', handleBlur);
 
-			syncFromForm();
-
-			const interval = setInterval(syncFromForm, 50);
-
 			return {
 				update() {
-					syncFromForm();
+					const nextValue = getValueByPath(form.data, path);
+					writeValue(node, nextValue);
 				},
 
 				destroy() {
-					mounted = false;
-
-					clearInterval(interval);
-
 					node.removeEventListener('input', handleInput);
 					node.removeEventListener('change', handleChange);
 					node.removeEventListener('blur', handleBlur);
