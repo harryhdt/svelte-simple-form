@@ -1,4 +1,4 @@
-import { getValueByPath, setValueByPath } from './path';
+import { getValueByPath, setByPath } from './path';
 import { updateFieldDirty, setTouched } from './state';
 import type { FormControlContext } from './types';
 
@@ -28,7 +28,7 @@ export function useFormControl<T extends Record<string, any>>(
 	}
 
 	function setData(path: string, value: unknown) {
-		setValueByPath(form.data, path, value);
+		setByPath(form.data, path, value);
 		setTouched(form.touched, path, true);
 		updateFieldDirty(form, path);
 	}
@@ -44,7 +44,7 @@ export function useFormControl<T extends Record<string, any>>(
 	function resetField(path: string) {
 		const initialValue = getValueByPath(form.initialValues, path);
 
-		setValueByPath(form.data, path, structuredClone(initialValue));
+		setByPath(form.data, path, structuredClone(initialValue));
 
 		delete form.errors[path];
 		delete form.touched[path];
