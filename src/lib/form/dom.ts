@@ -8,7 +8,10 @@ export function readValue(el: any, formData: any, path: string) {
 	const tag = el.tagName.toLowerCase();
 
 	if (type === 'file') {
-		if (el.multiple) return Array.from(el.files || []);
+		if (el.multiple) {
+			return Array.from(el.files || []);
+		}
+
 		return el.files?.[0] ?? null;
 	}
 
@@ -16,21 +19,22 @@ export function readValue(el: any, formData: any, path: string) {
 		if (el.multiple) {
 			return Array.from(el.selectedOptions).map((o: any) => o.value);
 		}
+
 		return el.value;
 	}
 
 	if (type === 'checkbox') {
-		const val = getValueByPath(formData, path);
+		const current = getValueByPath(formData, path);
 
-		if (Array.isArray(val)) {
+		if (Array.isArray(current)) {
 			if (el.checked) {
-				return val.includes(el.value) ? val : [...val, el.value];
-			} else {
-				return val.filter((v: any) => v !== el.value);
+				return current.includes(el.value) ? current : [...current, el.value];
 			}
+
+			return current.filter((v: any) => v !== el.value);
 		}
 
-		return el.checked;
+		return Boolean(el.checked);
 	}
 
 	if (type === 'radio') {
@@ -41,6 +45,10 @@ export function readValue(el: any, formData: any, path: string) {
 		return el.innerText;
 	}
 
+	if (type === 'number') {
+		return el.value;
+	}
+
 	return el.value;
 }
 
@@ -48,7 +56,9 @@ export function writeValue(el: any, value: any) {
 	const type = el.type;
 	const tag = el.tagName.toLowerCase();
 
-	if (type === 'file') return;
+	if (type === 'file') {
+		return;
+	}
 
 	if (tag === 'select') {
 		if (el.multiple && Array.isArray(value)) {
@@ -63,8 +73,12 @@ export function writeValue(el: any, value: any) {
 	}
 
 	if (type === 'checkbox') {
-		if (Array.isArray(value)) el.checked = value.includes(el.value);
-		else el.checked = Boolean(value);
+		if (Array.isArray(value)) {
+			el.checked = value.includes(el.value);
+		} else {
+			el.checked = Boolean(value);
+		}
+
 		return;
 	}
 
@@ -74,8 +88,21 @@ export function writeValue(el: any, value: any) {
 	}
 
 	if (tag === 'div' && el.isContentEditable) {
-		if (el.innerText !== value) {
-			el.innerText = value ?? '';
+		const nextValue = value ?? '';
+
+		if (el.innerText !== nextValue) {
+			const selection = window.getSelection?.();
+			const active = document.activeElement === el;
+
+			el.innerText = nextValue;
+
+			if (active && selection && el.lastChild) {
+				const range = document.createRange();
+				range.selectNodeContents(el);
+				range.collapse(false);
+				selection.removeAllRanges();
+				selection.addRange(range);
+			}
 		}
 
 		return;
@@ -83,9 +110,3 @@ export function writeValue(el: any, value: any) {
 
 	el.value = value ?? '';
 }
-
-export type ControlDataProps = {
-	field: string;
-	valueAsNumber?: boolean;
-	setValueAs?: (v: any) => Promise<void> | void;
-};
