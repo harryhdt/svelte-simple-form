@@ -1,5 +1,5 @@
 // Extracted useFormControl engine from form.svelte.ts
-// Phase 7A + 7B + 7C - core runtime + arrays + validation
+// Phase 7A + 7B + 7C + 7D - modular runtime extraction
 
 import { tick } from 'svelte';
 
@@ -12,6 +12,8 @@ import {
 	arraySwap,
 	shiftRecordKeys
 } from './array';
+
+import { createControl } from './control';
 
 import {
 	removeDirty,
@@ -172,6 +174,11 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		removeDirty(field: FlatPaths<T>) {
 			removeDirty(form.dirty, field);
 		},
+
+		control: createControl<T>({
+			form,
+			validationContext
+		}),
 
 		arrayAdd<P extends ArrayPaths<T>>(
 			path: P,
