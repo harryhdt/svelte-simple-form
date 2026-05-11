@@ -1,5 +1,5 @@
 // Extracted useFormControl engine from form.svelte.ts
-// Phase 7A + 7B + 7C + 7D - modular runtime extraction
+// Compatibility parity runtime
 
 import { tick } from 'svelte';
 
@@ -93,6 +93,14 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		isSubmitting: false,
 		isDirty: false,
 
+		setIsDirty(dirty: boolean = true) {
+			form.isDirty = dirty;
+		},
+
+		setIsSubmitting(submitting: boolean = true) {
+			form.isSubmitting = submitting;
+		},
+
 		reset() {
 			(async () => {
 				resetGeneration++;
@@ -104,8 +112,8 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 				form.touched = {} as Record<FlatPaths<T>, boolean | undefined>;
 				form.dirty = {} as Record<FlatPaths<T>, boolean | undefined>;
 				form.isValid = true;
-				form.isDirty = false;
 				form.isSubmitting = false;
+				form.isDirty = false;
 
 				await tick();
 				onReset?.();
@@ -137,6 +145,21 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 
 			await tick();
 			form.isSubmitting = false;
+		},
+
+		handler(node: HTMLFormElement) {
+			const handleSubmit = (event: Event) => {
+				event.preventDefault();
+				form.submit();
+			};
+
+			node.addEventListener('submit', handleSubmit);
+
+			return {
+				destroy() {
+					node.removeEventListener('submit', handleSubmit);
+				}
+			};
 		},
 
 		setInitialValues: (values: T, props: { reset?: boolean } = {}) => {
