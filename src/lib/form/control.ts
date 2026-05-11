@@ -1,5 +1,5 @@
 // Extracted control orchestration layer from form.svelte.ts
-// Phase 7D-A - control foundation
+// Phase 7D-A + 7D-B - control foundation + parity edge cases
 
 import { getValueByPath } from './path';
 import { readValue, writeValue } from './dom';
@@ -16,8 +16,12 @@ export type CreateControlProps<T> = {
 export function createControl<T>({ form, validationContext }: CreateControlProps<T>) {
 	return function control(path: FlatPaths<T>, props?: ControlDataProps) {
 		return function (node: HTMLElement & Record<string, any>) {
-			const value = getValueByPath(form.data, path);
-			writeValue(node, value);
+			const syncFromForm = () => {
+				const value = getValueByPath(form.data, path);
+				writeValue(node, value);
+			};
+
+			syncFromForm();
 
 			const updateValue = async () => {
 				let value = readValue(node, form.data, path);
@@ -37,8 +41,19 @@ export function createControl<T>({ form, validationContext }: CreateControlProps
 				});
 			};
 
+			const type = node.type;
+			const tag = node.tagName?.toLowerCase?.();
+
+			const useChangeEvent =
+				type === 'checkbox' ||
+				type === 'radio' ||
+				type === 'file' ||
+				(tag === 'select' && node.multiple);
+
 			const handleInput = () => {
-				updateValue();
+				if (!useChangeEvent) {
+					updateValue();
+				}
 			};
 
 			const handleChange = () => {
@@ -57,16 +72,23 @@ export function createControl<T>({ form, validationContext }: CreateControlProps
 			node.addEventListener('change', handleChange);
 			node.addEventListener('blur', handleBlur);
 
+			if (tag === 'div' && node.isContentEditable) {
+				node.addEventListener('keyup', handleInput);
+			}
+
 			return {
 				update() {
-					const nextValue = getValueByPath(form.data, path);
-					writeValue(node, nextValue);
+					syncFromForm();
 				},
 
 				destroy() {
 					node.removeEventListener('input', handleInput);
 					node.removeEventListener('change', handleChange);
 					node.removeEventListener('blur', handleBlur);
+
+					if (tag === 'div' && node.isContentEditable) {
+						node.removeEventListener('keyup', handleInput);
+					}
 				}
 			};
 		};
