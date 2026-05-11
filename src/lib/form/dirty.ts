@@ -1,6 +1,6 @@
 // Internal dirty/equality utilities extracted from form.svelte.ts
-// Phase 1 incremental refactor
+// Preparation-only phase
 
-export function isDirty(a: unknown, b: unknown) {
-	return JSON.stringify(a) !== JSON.stringify(b);
+export function isPathDirty(initial: unknown, value: unknown) {
+	return JSON.stringify(initial) !== JSON.stringify(value);
 }
