@@ -1,9 +1,18 @@
 // Extracted useFormControl engine from form.svelte.ts
-// Phase 7A - core runtime extraction
+// Phase 7A + 7B - core runtime + array operations
 
 import { tick } from 'svelte';
 
 import { getValueByPath, setByPath } from './path';
+
+import {
+	arrayInsert,
+	arrayMove,
+	arrayRemove,
+	arraySwap,
+	shiftRecordKeys
+} from './array';
+
 import {
 	removeDirty,
 	removeTouched,
@@ -13,6 +22,8 @@ import {
 } from './state';
 
 import type {
+	ArrayItem,
+	ArrayPaths,
 	FieldOptions,
 	FlatPaths,
 	FormControlProps,
@@ -130,6 +141,151 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 
 		removeDirty(field: FlatPaths<T>) {
 			removeDirty(form.dirty, field);
+		},
+
+		arrayAdd<P extends ArrayPaths<T>>(
+			path: P,
+			value: NonNullable<ValueFromPath<T, P>> extends readonly (infer I)[] ? I : never,
+			idx: number | undefined = undefined,
+			opts: FieldOptions = {}
+		) {
+			const { shouldTouch = true, shouldDirty = true } = opts;
+			const arr = (getValueByPath(form.data, path) || []) as any[];
+			const index = idx !== undefined ? idx : arr.length;
+
+			setByPath(form.data, path, arrayInsert(arr, index, value));
+
+			form.touched = shiftRecordKeys(form.touched, path, (old) =>
+				old >= index ? old + 1 : old
+			);
+
+			form.dirty = shiftRecordKeys(form.dirty, path, (old) =>
+				old >= index ? old + 1 : old
+			);
+
+			form.errors = shiftRecordKeys(form.errors, path, (old) =>
+				old >= index ? old + 1 : old
+			);
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+		},
+
+		arrayRemove<P extends ArrayPaths<T>>(path: P, index: number, opts: FieldOptions = {}) {
+			const { shouldTouch = true, shouldDirty = true } = opts;
+			const arr = getValueByPath(form.data, path) as any[];
+
+			setByPath(form.data, path, arrayRemove(arr, index));
+
+			form.touched = shiftRecordKeys(form.touched, path, (old) =>
+				old === index ? null : old > index ? old - 1 : old
+			);
+
+			form.dirty = shiftRecordKeys(form.dirty, path, (old) =>
+				old === index ? null : old > index ? old - 1 : old
+			);
+
+			form.errors = shiftRecordKeys(form.errors, path, (old) =>
+				old === index ? null : old > index ? old - 1 : old
+			);
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+		},
+
+		arraySwap<P extends ArrayPaths<T>>(path: P, i: number, j: number, opts: FieldOptions = {}) {
+			const { shouldTouch = true, shouldDirty = true } = opts;
+			const arr = getValueByPath(form.data, path) as any[];
+
+			setByPath(form.data, path, arraySwap(arr, i, j));
+
+			form.touched = shiftRecordKeys(form.touched, path, (old) =>
+				old === i ? j : old === j ? i : old
+			);
+
+			form.dirty = shiftRecordKeys(form.dirty, path, (old) =>
+				old === i ? j : old === j ? i : old
+			);
+
+			form.errors = shiftRecordKeys(form.errors, path, (old) =>
+				old === i ? j : old === j ? i : old
+			);
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+		},
+
+		arrayMove<P extends ArrayPaths<T>>(path: P, from: number, to: number, opts: FieldOptions = {}) {
+			if (from === to) return;
+
+			const { shouldTouch = true, shouldDirty = true } = opts;
+			const arr = getValueByPath(form.data, path) as any[];
+
+			setByPath(form.data, path, arrayMove(arr, from, to));
+
+			const shiftFn = (old: number): number => {
+				if (old === from) return to;
+				if (from < to && old > from && old <= to) return old - 1;
+				if (from > to && old >= to && old < from) return old + 1;
+				return old;
+			};
+
+			form.touched = shiftRecordKeys(form.touched, path, shiftFn);
+			form.dirty = shiftRecordKeys(form.dirty, path, shiftFn);
+			form.errors = shiftRecordKeys(form.errors, path, shiftFn);
+
+			if (shouldTouch) setByPath(form.touched, path, true);
+			if (shouldDirty) setByPath(form.dirty, path, true);
+		},
+
+		arrayRemoveBy<P extends ArrayPaths<T>>(
+			path: P,
+			predicate: (item: ArrayItem<T, P>) => boolean,
+			opts: FieldOptions = {}
+		) {
+			const arr = (getValueByPath(form.data, path) || []) as any[];
+			const index = arr.findIndex(predicate);
+
+			if (index !== -1) {
+				this.arrayRemove(path, index, opts);
+			} else {
+				console.warn(`arrayRemoveBy: No item found matching predicate at path "${path}"`);
+			}
+		},
+
+		arrayUpdateBy<P extends ArrayPaths<T>>(
+			path: P,
+			predicate: (item: ArrayItem<T, P>) => boolean,
+			value: ArrayItem<T, P> | ((prev: ArrayItem<T, P>) => ArrayItem<T, P>),
+			opts: FieldOptions = {}
+		) {
+			const { shouldTouch = true, shouldDirty = true } = opts;
+			const arr = (getValueByPath(form.data, path) || []) as any[];
+			const index = arr.findIndex(predicate);
+
+			if (index !== -1) {
+				const currentItem = arr[index];
+
+				const newValue =
+					typeof value === 'function' ? (value as Function)(currentItem) : value;
+
+				const newArr = arr.slice();
+				newArr[index] = newValue;
+
+				setByPath(form.data, path, newArr);
+
+				const itemPath = `${path}.${index}` as FlatPaths<T>;
+
+				if (shouldTouch) {
+					form.touched[itemPath] = true;
+				}
+
+				if (shouldDirty) {
+					updatePathDirty(form, itemPath, newValue);
+				}
+			} else {
+				console.warn(`arrayUpdateBy: No item found matching predicate at path "${path}"`);
+			}
 		},
 
 		setErrors(errors: Record<FlatPaths<T>, string[] | undefined>) {
