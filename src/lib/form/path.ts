@@ -1,34 +1,46 @@
 // Internal path utilities extracted from form.svelte.ts
-// Phase 1 incremental refactor
+// Preparation-only phase
 
 export type Path = string;
 
-export function getValueByPath(obj: unknown, path: Path) {
-	if (!path) return obj;
-
-	return path.split('.').reduce((acc: any, key) => {
-		if (acc == null) return undefined;
-		return acc[key];
-	}, obj as any);
-}
-
-export function setByPath(obj: any, path: Path, value: unknown) {
-	const keys = path.split('.');
-	const lastKey = keys.pop();
-
-	if (!lastKey) return obj;
-
+export function setByPath(obj: any, path: string, value: any) {
+	const parts = path.split('.');
 	let current = obj;
 
-	for (const key of keys) {
-		if (current[key] == null || typeof current[key] !== 'object') {
-			current[key] = {};
-		}
+	for (let i = 0; i < parts.length - 1; i++) {
+		const part = parts[i];
 
-		current = current[key];
+		if (/^\d+$/.test(part)) {
+			const index = Number(part);
+			if (!Array.isArray(current)) throw new Error(`Expected array at "${part}"`);
+			if (!current[index]) current[index] = {};
+			current = current[index];
+		} else {
+			if (current[part] === undefined) current[part] = {};
+			current = current[part];
+		}
 	}
 
-	current[lastKey] = value;
+	const last = parts[parts.length - 1];
+	if (/^\d+$/.test(last)) current[Number(last)] = value;
+	else current[last] = value;
+}
 
-	return obj;
+export function getValueByPath(obj: any, path: string) {
+	const parts = path.split('.');
+	let current = obj;
+
+	for (const part of parts) {
+		const isIndex = /^\d+$/.test(part);
+
+		if (isIndex) {
+			if (!Array.isArray(current)) return undefined;
+			current = current[Number(part)];
+		} else {
+			if (current == null || !(part in current)) return undefined;
+			current = current[part];
+		}
+	}
+
+	return current;
 }
