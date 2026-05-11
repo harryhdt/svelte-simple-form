@@ -1,59 +1,30 @@
-// Extracted state helpers from form.svelte.ts
-// Compatibility parity runtime
+// Simplified state helpers aligned closer to form.svelte.ts
 
 import { getValueByPath } from './path';
 
-export function recomputeFieldDirty(
+export function updateFieldDirty(
 	form: {
 		initialValues: any;
 		data: any;
 		dirty: Record<string, boolean | undefined>;
+		isDirty: boolean;
 	},
 	path: string
 ) {
 	const initial = getValueByPath(form.initialValues, path);
 	const current = getValueByPath(form.data, path);
 
-	const isPathDirty = JSON.stringify(initial) !== JSON.stringify(current);
+	const isDirty = JSON.stringify(initial) !== JSON.stringify(current);
 
-	if (isPathDirty) {
+	if (isDirty) {
 		form.dirty[path] = true;
 	} else {
 		delete form.dirty[path];
 	}
 
-	return isPathDirty;
-}
+	form.isDirty = Object.keys(form.dirty).length > 0;
 
-export function recomputeDirtyState(
-	form: {
-		initialValues: any;
-		data: any;
-		isDirty: boolean;
-	}
-) {
-	const equal = Object.keys(form.data || {}).every((key) => {
-		return (
-			JSON.stringify(form.data[key]) === JSON.stringify(form.initialValues[key])
-		);
-	});
-
-	form.isDirty = !equal;
-
-	return form.isDirty;
-}
-
-export function updatePathDirty(
-	form: {
-		initialValues: any;
-		data: any;
-		dirty: Record<string, boolean | undefined>;
-		isDirty: boolean;
-	},
-	path: string
-) {
-	recomputeFieldDirty(form, path);
-	recomputeDirtyState(form);
+	return isDirty;
 }
 
 export function setTouched(
@@ -61,7 +32,11 @@ export function setTouched(
 	field: string,
 	value = true
 ) {
-	touched[field] = value;
+	if (value) {
+		touched[field] = true;
+	} else {
+		delete touched[field];
+	}
 }
 
 export function removeTouched(
@@ -76,7 +51,11 @@ export function setDirty(
 	field: string,
 	value = true
 ) {
-	dirty[field] = value;
+	if (value) {
+		dirty[field] = true;
+	} else {
+		delete dirty[field];
+	}
 }
 
 export function removeDirty(
