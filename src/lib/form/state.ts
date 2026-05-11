@@ -1,24 +1,59 @@
 // Extracted state helpers from form.svelte.ts
-// Real split-engine preparation phase
+// Compatibility parity runtime
 
 import { getValueByPath } from './path';
 
-export function updatePathDirty(
+export function recomputeFieldDirty(
 	form: {
 		initialValues: any;
+		data: any;
 		dirty: Record<string, boolean | undefined>;
 	},
-	path: string,
-	value: any
+	path: string
 ) {
 	const initial = getValueByPath(form.initialValues, path);
-	const isPathDirty = JSON.stringify(initial) !== JSON.stringify(value);
+	const current = getValueByPath(form.data, path);
+
+	const isPathDirty = JSON.stringify(initial) !== JSON.stringify(current);
 
 	if (isPathDirty) {
 		form.dirty[path] = true;
 	} else {
 		delete form.dirty[path];
 	}
+
+	return isPathDirty;
+}
+
+export function recomputeDirtyState(
+	form: {
+		initialValues: any;
+		data: any;
+		isDirty: boolean;
+	}
+) {
+	const equal = Object.keys(form.data || {}).every((key) => {
+		return (
+			JSON.stringify(form.data[key]) === JSON.stringify(form.initialValues[key])
+		);
+	});
+
+	form.isDirty = !equal;
+
+	return form.isDirty;
+}
+
+export function updatePathDirty(
+	form: {
+		initialValues: any;
+		data: any;
+		dirty: Record<string, boolean | undefined>;
+		isDirty: boolean;
+	},
+	path: string
+) {
+	recomputeFieldDirty(form, path);
+	recomputeDirtyState(form);
 }
 
 export function setTouched(
