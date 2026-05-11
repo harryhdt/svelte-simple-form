@@ -1,5 +1,5 @@
 // Extracted useFormControl engine from form.svelte.ts
-// Phase 7A + 7B - core runtime + array operations
+// Phase 7A + 7B + 7C - core runtime + arrays + validation
 
 import { tick } from 'svelte';
 
@@ -20,6 +20,8 @@ import {
 	setTouched,
 	updatePathDirty
 } from './state';
+
+import { executeValidation, safeValidateField } from './validation';
 
 import type {
 	ArrayItem,
@@ -47,6 +49,34 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 	let resetGeneration = $state(0);
 	const debounceTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 	let activeRequests = $state(0);
+
+	const validationContext = {
+		form: null as any,
+		validator,
+		validateOn,
+		validateAfter,
+		validateDebounce,
+		debounceTimers,
+		activeRequests: {
+			get value() {
+				return activeRequests;
+			},
+			set value(v) {
+				activeRequests = v;
+			}
+		},
+		resetGeneration: {
+			get value() {
+				return resetGeneration;
+			},
+			set value(v) {
+				resetGeneration = v;
+			}
+		},
+		setIsValidating(value: boolean) {
+			form.isValidating = value;
+		}
+	};
 
 	const form = $state({
 		initialValues,
@@ -300,15 +330,24 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			delete form.errors[field];
 		},
 
-		async validateField() {
+		async validateField(field: FlatPaths<T>) {
+			if (!validator) return true;
+
+			executeValidation(validationContext, field);
+
 			return true;
 		},
 
 		async validate() {
-			if (validator) return await validator.validateForm(form);
+			if (validator) {
+				return await validator.validateForm(form);
+			}
+
 			return true;
 		}
 	});
+
+	validationContext.form = form;
 
 	function createSetData<T>() {
 		function setData(values: T, props?: { shouldValidate?: boolean }): void;
@@ -347,7 +386,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 				}
 
 				if (validator && shouldValidate) {
-					// validation wiring added in phase 7C
+					safeValidateField(validationContext, arg1);
 				}
 			}
 		}
