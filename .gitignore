@@ -34,3 +34,4 @@ src/lib-old*
 svelte-simple-form*.tgz
 
 .github
+.agents
