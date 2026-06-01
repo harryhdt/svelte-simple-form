@@ -402,15 +402,16 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		},
 
 		async submit(callback?: (data: T) => any) {
-			if (validator && validateOn.includes('submit')) {
-				// @ts-ignore
-				if (!(await validator.validateForm(form))) return;
-			}
 			if (form.isSubmitting) return;
-			if (!form.isValid) return;
-
 			form.isSubmitting = true;
+
 			try {
+				if (validator && validateOn.includes('submit')) {
+					// @ts-ignore
+					if (!(await validator.validateForm(form))) return;
+				}
+				if (!form.isValid) return;
+
 				if (callback) await callback(form.data);
 				else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
 			} finally {
