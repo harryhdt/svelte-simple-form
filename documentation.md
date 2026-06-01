@@ -4,8 +4,8 @@ A `lightweight`, `type-safe` and `reactive` form utility built on **Svelte Runes
 
 The library exposes two primary hooks:
 
-- `useForm` — minimal form state and submission handling
-- `useFormControl` — full form control with validation, state tracking, and field bindings
+- `useForm` — minimal form state and submission handling; direct bindings are fine here
+- `useFormControl` — full form control with validation, state tracking, and field bindings; prefer `use:control` or `form.setData` for controlled fields
 
 ### This library is designed for:
 
@@ -18,7 +18,7 @@ It does not introduce schemas, runtime models, or implicit abstractions.
 
 ## Features
 
-- Simply usage
+- Simple usage
 - **Zero dependencies**
 - Nested field paths support (`a.b.0.c`)
 - Built on Svelte 5 primitives: `$state`, `$effect`, and `untrack`
@@ -31,46 +31,19 @@ It does not introduce schemas, runtime models, or implicit abstractions.
 
 ## Installation
 
-with npm:
+With npm:
 
-````bash
+```bash
 npm install svelte-simple-form
-
-### Remove By Predicate
-
-Use `arrayRemoveBy` to remove the first item matching a predicate. This is helpful when you don't know the index but can identify the item by a field.
-
-```ts
-form.arrayRemoveBy('users', (user) => user.id === targetId);
-````
-
-### Update By Predicate
-
-Use `arrayUpdateBy` to update the first item matching a predicate. You can pass a new value or an updater function.
-
-```ts
-// Replace with a new object
-form.arrayUpdateBy('users', (u) => u.id === targetId, { ...updatedUser });
-
-// Or use an updater function
-form.arrayUpdateBy(
-	'users',
-	(u) => u.id === targetId,
-	(prev) => ({ ...prev, name: 'New' })
-);
 ```
 
-Both `arrayRemoveBy` and `arrayUpdateBy` accept the same `FieldOptions` as other array helpers. Note: array helpers now default `shouldValidate` to `true` (when a validator is configured), so array mutations will trigger validation by default.
-
-````
-
-or with pnpm:
+Or with pnpm:
 
 ```bash
 pnpm add svelte-simple-form
-````
+```
 
-or with yarn:
+Or with yarn:
 
 ```bash
 yarn add svelte-simple-form

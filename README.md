@@ -2,7 +2,7 @@
 
 A lightweight, **type-safe**, and **reactive** form state management hook for **Svelte 5**, featuring:
 
-- Simply usage
+- Simple usage
 - Zero dependencies
 - Nested field paths support
 - Dirty tracking, touched fields, and submission state
@@ -10,8 +10,8 @@ A lightweight, **type-safe**, and **reactive** form state management hook for **
 
 The library exposes two primary hooks:
 
-- `useForm` — minimal form state and submission handling
-- `useFormControl` — full form control with validation, state tracking, and field bindings
+- `useForm` — minimal form state and submission handling; direct bindings are fine here
+- `useFormControl` — full form control with validation, state tracking, and field bindings; prefer `use:control` or `form.setData` for controlled fields
 
 ---
 
@@ -102,7 +102,7 @@ Use `useFormControl` when you need **field-level control**, such as validation, 
 		{form.isSubmitting ? 'Submitting...' : 'Submit'}
 	</button>
 
-	<button type="button" on:click={() => form.reset()}> Reset </button>
+	<button type="button" onclick={() => form.reset()}> Reset </button>
 </form>
 ```
 
