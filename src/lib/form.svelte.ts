@@ -323,10 +323,13 @@ export function useForm<T>(props: FormProps<T>) {
 
 		async submit(callback?: (data: T) => any) {
 			form.isSubmitting = true;
-			if (callback) await callback(form.data);
-			else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
-			await tick();
-			form.isSubmitting = false;
+			try {
+				if (callback) await callback(form.data);
+				else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
+			} finally {
+				await tick();
+				form.isSubmitting = false;
+			}
 		},
 
 		handler(node: HTMLFormElement) {
@@ -393,7 +396,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		},
 
 		resetField(path: FlatPaths<T>) {
-			setByPath(form.data, path, getValueByPath(initialValues, path));
+			setByPath(form.data, path, getValueByPath(form.initialValues, path));
 			form.touched[path] = false;
 			form.dirty[path] = false;
 		},
@@ -407,10 +410,13 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			if (!form.isValid) return;
 
 			form.isSubmitting = true;
-			if (callback) await callback(form.data);
-			else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
-			await tick();
-			form.isSubmitting = false;
+			try {
+				if (callback) await callback(form.data);
+				else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
+			} finally {
+				await tick();
+				form.isSubmitting = false;
+			}
 		},
 
 		setInitialValues: (values: T, props: { reset?: boolean } = {}) => {
