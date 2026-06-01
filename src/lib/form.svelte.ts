@@ -393,7 +393,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		},
 
 		resetField(path: FlatPaths<T>) {
-			setByPath(form.data, path, getValueByPath(initialValues, path));
+			setByPath(form.data, path, getValueByPath(form.initialValues, path));
 			form.touched[path] = false;
 			form.dirty[path] = false;
 		},
