@@ -383,6 +383,29 @@ This pattern allows you to:
 - compose multiple DOM behaviors if needed
 - maintain full dirty/touched/validation behavior
 
+#### Registering rendered elements by id (advanced)
+
+If you cannot modify the component to forward the DOM node, you can still attach `control` after render by looking up the rendered element by `id`.
+
+This is useful for opaque component libraries such as `flowbite-svelte`, where you can set stable ids but cannot access the inner input directly.
+
+```svelte
+<script lang="ts">
+	const elementIds = ['owner_id', 'name', 'name_kana'] as const;
+
+	$effect(() => {
+		elementIds.forEach((key) => {
+			const elm = document.getElementById(key) as HTMLInputElement | null;
+			if (elm) {
+				control(elm, key);
+			}
+		});
+	});
+</script>
+```
+
+Use this pattern when you still want `control()` behavior, but the component does not expose its DOM node.
+
 ---
 
 ## Array Helpers
