@@ -2,6 +2,37 @@
 
 All notable changes to this project will documented in this file.
 
+## [0.4.11] - 2026-06-06
+
+### 🐛 Bug Fixes
+
+- **Prevent double submit during async validation**: Moved `form.isSubmitting = true` to execute before validation begins, ensuring that rapid double-clicks or re-submits during async validation are properly blocked.
+  - closes [`#14`](https://github.com/harryhdt/svelte-simple-form/issues/14)
+
+### 📚 Documentation
+
+- **Component bridge pattern**: Added documentation for registering rendered elements by `id` when using opaque component libraries (e.g. `flowbite-svelte`) that do not forward their inner DOM node. This provides an alternative `control()` integration path without modifying the component source.
+
+## [0.4.10] - 2026-06-01
+
+### 🐛 Bug Fixes
+
+- **isSubmitting not cleared on callback error**: Ensured `isSubmitting` is properly reset when the submit callback throws an error, preventing the form from becoming stuck in a submitting state.
+  - closes [`#14`](https://github.com/harryhdt/svelte-simple-form/issues/14)
+- **resetField uses stale initialValues**: Fixed `resetField()` to read from the latest `form.initialValues` instead of a stale closure value.
+  - closes [`#13`](https://github.com/harryhdt/svelte-simple-form/issues/13)
+
+### 📚 Documentation
+
+- Fixed typos and improved clarity in `README.md` regarding `useForm` vs `useFormControl` usage.
+  - addresses [`#10`](https://github.com/harryhdt/svelte-simple-form/issues/10)
+- Fixed broken markdown and documentation inconsistencies in `documentation.md`.
+  - addresses [`#11`](https://github.com/harryhdt/svelte-simple-form/issues/11)
+
+### 🔄 Internal Changes
+
+- Added `.agents` directory to `.gitignore`.
+
 ## [0.4.9] - 2026-03-18
 ### ✨ Features
 
