@@ -2,6 +2,18 @@
 
 All notable changes to this project will documented in this file.
 
+## [0.4.12] - 2026-07-01
+
+### 🐛 Bug Fixes
+
+- **`setData` field-level now forces validation to prevent stale errors**: When `setData('field', null)` is called with a value matching the field's `initialValue`, the dirty flag was being deleted by `updatePathDirty`. This caused the `touched-and-dirty` `validateAfter` guard to skip validation, leaving stale error messages behind — even though the field was now valid.
+
+  **Root cause**: `updatePathDirty` removes the dirty flag when `JSON.stringify(value) === JSON.stringify(initial)`. Without the dirty flag, `safeValidateField` skips validation, and old errors persist in `form.errors`.
+
+  **Fix**: `setData` field-level overload now passes `force=true` to `safeValidateField`, bypassing the `validateAfter` guard. `setData` is an explicit programmatic API — unlike `use:control` DOM events — so the guard is semantically unnecessary here. The validator runs and clears/sets errors as appropriate.
+
+  - Note: The `use:control` action path already handled this correctly via explicit error-clearing logic at line 855-857
+
 ## [0.4.11] - 2026-06-06
 
 ### 🐛 Bug Fixes
@@ -34,6 +46,7 @@ All notable changes to this project will documented in this file.
 - Added `.agents` directory to `.gitignore`.
 
 ## [0.4.9] - 2026-03-18
+
 ### ✨ Features
 
 - Added `arrayRemoveBy` and `arrayUpdateBy` helpers to remove or update array items via a predicate. These mirror existing array helpers (`arrayAdd`, `arrayRemove`, `arraySwap`, `arrayMove`) but operate by predicate for convenience.
