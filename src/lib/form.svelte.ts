@@ -650,7 +650,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 				setByPath(form.data, arg1, arg2);
 				if (shouldTouch) setByPath(form.touched, arg1, true);
 				if (shouldDirty) updatePathDirty(arg1, arg2);
-				if (validator && shouldValidate) safeValidateField(arg1);
+				if (validator && shouldValidate) safeValidateField(arg1, true);
 			}
 		}
 
