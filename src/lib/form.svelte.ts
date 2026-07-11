@@ -172,6 +172,7 @@ type FormProps<T> = {
 	initialValues: T;
 	onSubmit?: (data: T) => Promise<void>;
 	onReset?: () => void;
+	onSubmitError?: (error: unknown) => void;
 };
 
 type FormControlProps<T> = FormProps<T> & {
@@ -179,6 +180,8 @@ type FormControlProps<T> = FormProps<T> & {
 	validateOn?: ('change' | 'blur' | 'submit')[];
 	validateAfter?: 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty';
 	validateDebounce?: number; // Debounce validateOn: 'change' by ms (prevents API hammering)
+	onSubmitErrorValidation?: () => void;
+	onSubmitError?: (error: unknown) => void;
 };
 
 type FieldOptions = {
@@ -304,7 +307,7 @@ import { tick, untrack } from 'svelte';
 // ---------- useForm ----------
 
 export function useForm<T>(props: FormProps<T>) {
-	const { initialValues, onSubmit, onReset } = props;
+	const { initialValues, onSubmit, onReset, onSubmitError } = props;
 
 	const form = $state({
 		initialValues,
@@ -324,8 +327,12 @@ export function useForm<T>(props: FormProps<T>) {
 		async submit(callback?: (data: T) => any) {
 			form.isSubmitting = true;
 			try {
-				if (callback) await callback(form.data);
-				else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
+				try {
+					if (callback) await callback(form.data);
+					else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
+				} catch (e) {
+					onSubmitError?.(e);
+				}
 			} finally {
 				await tick();
 				form.isSubmitting = false;
@@ -353,7 +360,9 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 		validateAfter = 'touched-and-dirty',
 		validateDebounce = 100,
 		onSubmit,
-		onReset
+		onReset,
+		onSubmitErrorValidation,
+		onSubmitError
 	} = props;
 
 	// Track reset generation to prevent pending validations from overwriting reset state
@@ -408,12 +417,28 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 			try {
 				if (validator && validateOn.includes('submit')) {
 					// @ts-ignore
-					if (!(await validator.validateForm(form))) return;
+					if (!(await validator.validateForm(form))) {
+						onSubmitErrorValidation?.();
+						return;
+					}
 				}
-				if (!form.isValid) return;
 
-				if (callback) await callback(form.data);
-				else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
+				// Guard: form.isValid is updated via $effect (async),
+				// but form.errors is mutated synchronously via $state.
+				// Check both to catch sync setError() + submit() patterns.
+				const currentErrors = form.errors as Record<string, string[] | undefined>;
+				const hasErrors = Object.values(currentErrors).some((e) => e != null && e.length > 0);
+				if (hasErrors || !form.isValid) {
+					if (hasErrors) onSubmitErrorValidation?.();
+					return;
+				}
+
+				try {
+					if (callback) await callback(form.data);
+					else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
+				} catch (e) {
+					onSubmitError?.(e);
+				}
 			} finally {
 				await tick();
 				form.isSubmitting = false;
