@@ -118,8 +118,8 @@ const { form, control } = useFormControl({
 	// validateOn: ['change', 'blur', 'submit'], // => optional
 	// validateAfter: 'touched-and-dirty', // 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty' => optional
 	// validateDebounce: 100, // => optional
-	// onSubmitErrorValidation: () => { toast.error('Validation failed') },  // => optional
-	// onSubmitError: (error) => { console.error(error) }, // => optional
+	// onSubmitErrorValidation: (errors) => { toast.error('Validation failed') },  // => optional
+	// onSubmitError: (error, errors) => { console.error(error) }, // => optional (useFormControl)
 	onSubmit: async (data) => {
 		console.log(data);
 	}
@@ -603,7 +603,7 @@ and automatically updated based on user interaction and validation triggers.
 Fires when **client-side validation fails** during form submission, before `onSubmit` is called. This is mutually exclusive with `onSubmit` — never fire both in the same submit cycle.
 
 ```ts
-onSubmitErrorValidation?: () => void;
+onSubmitErrorValidation?: (errors: Record<string, string[] | undefined>) => void;
 ```
 
 Use this for: showing a toast, scrolling to the first error, or any feedback when validations fail.
@@ -613,7 +613,11 @@ Use this for: showing a toast, scrolling to the first error, or any feedback whe
 Fires when **`onSubmit` throws an unexpected exception**. Acts as a safety net — the error is caught by the library, preventing unhandled rejections.
 
 ```ts
+// useForm
 onSubmitError?: (error: unknown) => void;
+
+// useFormControl — includes current form errors for context
+onSubmitError?: (error: unknown, errors: Record<string, string[] | undefined>) => void;
 ```
 
 Use this for: logging unexpected errors, showing a generic error toast. **Not intended for expected errors** (4xx, validation) — handle those directly inside `onSubmit`.
@@ -639,11 +643,11 @@ const { form, control } = useFormControl({
 			toast.error(error.message); // handle expected errors directly
 		}
 	},
-	onSubmitErrorValidation() {
+	onSubmitErrorValidation(errors) {
 		toast.error('Please fix the validation errors');
-		scrollToFirstError(form.errors);
+		scrollToFirstError(errors);
 	},
-	onSubmitError(error) {
+	onSubmitError(error, errors) {
 		console.error('Unexpected submit error:', error); // safety net
 		toast.error('Something went wrong');
 	}
