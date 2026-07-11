@@ -2,6 +2,18 @@
 
 All notable changes to this project will documented in this file.
 
+## [0.4.14] - 2026-07-11
+
+### ✨ Features
+
+- **`onSubmitErrorValidation` now receives `errors` as argument**: Enables direct access to validation errors in the callback without reaching into `form.errors`.
+- **`onSubmitError` now includes `errors` as second argument (`useFormControl`)**: Provides form error context when `onSubmit` throws. Available as `(error, errors)`.
+- **Type-safe API per hook**: `useForm.onSubmitError` is typed as `(error) => void` (no errors param), while `useFormControl.onSubmitError` is `(error, errors) => void`, using `Omit` for clean type separation.
+
+### 🔄 Internal Changes
+
+- Fixed timing guard in `submit()` to check both `form.isValid` and `form.errors` synchronously, catching sync `setError()` + `submit()` patterns where `$effect`-driven `isValid` hadn't updated yet.
+
 ## [0.4.13] - 2026-07-11
 
 ### ✨ Features
