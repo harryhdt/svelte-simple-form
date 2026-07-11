@@ -2,6 +2,18 @@
 
 All notable changes to this project will documented in this file.
 
+## [0.4.13] - 2026-07-11
+
+### ✨ Features
+
+- **`onSubmitErrorValidation` callback (`useFormControl`)**: Fires when client-side validation fails during form submission, before `onSubmit` is called. Enables toast notifications and scroll-to-first-error without coupling to the submit handler.
+- **`onSubmitError` callback (`useForm` + `useFormControl`)**: Safety net that fires when `onSubmit` throws an unexpected exception. The error is caught by the library — no unhandled rejections.
+- **`onSubmit` wrapping in `useForm`**: `onSubmit` is now wrapped in an inner try-catch in both `useForm` and `useFormControl`, preventing unhandled rejections when the callback throws.
+
+### 📚 Documentation
+
+- Added "Error Callbacks" section to `documentation.md` covering `onSubmitErrorValidation` and `onSubmitError`, including behavior matrix and usage examples.
+
 ## [0.4.12] - 2026-07-01
 
 ### 🐛 Bug Fixes
