@@ -65,6 +65,7 @@ const { form } = useForm({
 		email: '',
 		password: ''
 	},
+	// onSubmitError: (error) => { console.error(error) }, // => optional
 	onSubmit: async (data) => {
 		console.log(data);
 	}
@@ -117,6 +118,8 @@ const { form, control } = useFormControl({
 	// validateOn: ['change', 'blur', 'submit'], // => optional
 	// validateAfter: 'touched-and-dirty', // 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty' => optional
 	// validateDebounce: 100, // => optional
+	// onSubmitErrorValidation: () => { toast.error('Validation failed') },  // => optional
+	// onSubmitError: (error) => { console.error(error) }, // => optional
 	onSubmit: async (data) => {
 		console.log(data);
 	}
@@ -588,6 +591,64 @@ form.errors;
 ```
 
 and automatically updated based on user interaction and validation triggers.
+
+---
+
+## Error Callbacks
+
+`useFormControl` provides two optional callbacks to handle submission errors explicitly, preventing silent failures. `onSubmitError` is also available in `useForm`.
+
+### `onSubmitErrorValidation`
+
+Fires when **client-side validation fails** during form submission, before `onSubmit` is called. This is mutually exclusive with `onSubmit` — never fire both in the same submit cycle.
+
+```ts
+onSubmitErrorValidation?: () => void;
+```
+
+Use this for: showing a toast, scrolling to the first error, or any feedback when validations fail.
+
+### `onSubmitError`
+
+Fires when **`onSubmit` throws an unexpected exception**. Acts as a safety net — the error is caught by the library, preventing unhandled rejections.
+
+```ts
+onSubmitError?: (error: unknown) => void;
+```
+
+Use this for: logging unexpected errors, showing a generic error toast. **Not intended for expected errors** (4xx, validation) — handle those directly inside `onSubmit`.
+
+### Behavior Matrix
+
+| Scenario                        | `onSubmit`            | `onSubmitErrorValidation` | `onSubmitError` |
+| ------------------------------- | --------------------- | ------------------------- | --------------- |
+| Client validation fails         | ❌ not called         | ✅ fires                  | ❌              |
+| `onSubmit` → `form.setErrors()` | ✅ runs               | ❌                        | ❌              |
+| `onSubmit` throws               | ✅ runs (then throws) | ❌                        | ✅ catches      |
+| `onSubmit` → success            | ✅ runs               | ❌                        | ❌              |
+
+### Example
+
+```ts
+const { form, control } = useFormControl({
+	initialValues: { email: '' },
+	onSubmit: async (values) => {
+		const { error } = await api.update(values);
+		if (error) {
+			form.setErrors(error.validations);
+			toast.error(error.message); // handle expected errors directly
+		}
+	},
+	onSubmitErrorValidation() {
+		toast.error('Please fix the validation errors');
+		scrollToFirstError(form.errors);
+	},
+	onSubmitError(error) {
+		console.error('Unexpected submit error:', error); // safety net
+		toast.error('Something went wrong');
+	}
+});
+```
 
 ---
 
