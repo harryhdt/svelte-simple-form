@@ -175,13 +175,13 @@ type FormProps<T> = {
 	onSubmitError?: (error: unknown) => void;
 };
 
-type FormControlProps<T> = FormProps<T> & {
+type FormControlProps<T> = Omit<FormProps<T>, 'onSubmitError'> & {
 	validator?: Validator<T>;
 	validateOn?: ('change' | 'blur' | 'submit')[];
 	validateAfter?: 'touched' | 'dirty' | 'touched-or-dirty' | 'touched-and-dirty';
 	validateDebounce?: number; // Debounce validateOn: 'change' by ms (prevents API hammering)
-	onSubmitErrorValidation?: () => void;
-	onSubmitError?: (error: unknown) => void;
+	onSubmitErrorValidation?: (errors: Record<string, string[] | undefined>) => void;
+	onSubmitError?: (error: unknown, errors: Record<string, string[] | undefined>) => void;
 };
 
 type FieldOptions = {
@@ -418,7 +418,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 				if (validator && validateOn.includes('submit')) {
 					// @ts-ignore
 					if (!(await validator.validateForm(form))) {
-						onSubmitErrorValidation?.();
+						onSubmitErrorValidation?.(form.errors);
 						return;
 					}
 				}
@@ -429,7 +429,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 				const currentErrors = form.errors as Record<string, string[] | undefined>;
 				const hasErrors = Object.values(currentErrors).some((e) => e != null && e.length > 0);
 				if (hasErrors || !form.isValid) {
-					if (hasErrors) onSubmitErrorValidation?.();
+					if (hasErrors) onSubmitErrorValidation?.(form.errors);
 					return;
 				}
 
@@ -437,7 +437,7 @@ export function useFormControl<T>(props: FormControlProps<T>) {
 					if (callback) await callback(form.data);
 					else if (onSubmit) await onSubmit($state.snapshot(form.data) as T);
 				} catch (e) {
-					onSubmitError?.(e);
+					onSubmitError?.(e, form.errors);
 				}
 			} finally {
 				await tick();
